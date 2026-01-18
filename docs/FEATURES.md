@@ -52,25 +52,70 @@
 - Detect existing Orbit data
 - Custom data path selection
 
+---
+
 ## Planned
 
 ### Global Search (Cmd+K)
-- Search across tasks, notes, projects
-- Quick navigation
-- Recent items
+- Search tasks, notes, projects, meetings in one place
+- Fuzzy matching for titles and content
+- Quick navigation to any item
+- Recent items list
+- Keyboard-first interaction
 
 ### Keyboard Shortcuts
+- `Cmd+K` - Open search
 - `Cmd+N` - New task
 - `Cmd+Shift+N` - New note
 - `Cmd+P` - New project
-- `Cmd+K` - Search
+- `Cmd+,` - Settings
+- `Esc` - Close modals/panels
+- Shortcut hints in UI tooltips
 
-### AI Context
+### Dashboard/Home Page
+- Today's tasks (due today, overdue)
+- Tasks in progress across all projects
+- Recent activity feed
+- Quick stats (tasks completed this week, etc.)
+- Quick capture without leaving dashboard
+
+### AI Context Integration
 - Per-project `context/` folder
-- `CLAUDE.md` for AI instructions
-- Knowledge files for project context
+- `CLAUDE.md` for AI instructions per project
+- Knowledge files (.md) for project context
+- Export project context for AI tools
 
-### Email (Future)
+### Testing Infrastructure
+- Unit tests for `lib/orbit/` (calculations, parser, search)
+- Integration tests for CRUD operations
+- Component tests for key UI flows
+
+---
+
+## Future Ideas
+
+### Email Integration
 - Per-area email config
 - Microsoft 365 / IMAP support
 - Assign emails to projects
+- Email-to-task conversion
+
+### Calendar View
+- Task due dates on calendar
+- Meeting scheduling
+- Drag tasks to reschedule
+
+### Time Tracking
+- Log time on tasks
+- Project time reports
+- Optional Pomodoro timer
+
+### Templates
+- Project templates (common project structures)
+- Task templates (recurring task patterns)
+- Note templates (meeting notes, decisions)
+
+### Mobile Companion
+- Read-only web view
+- Quick capture from phone
+- Sync via file system (iCloud/Dropbox)
