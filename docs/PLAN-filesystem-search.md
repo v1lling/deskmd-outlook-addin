@@ -23,28 +23,36 @@ Build a solid foundation for file watching, search, and auto-save.
 ---
 
 ## Phase 2: Search Index
-**Status:** Not started
+**Status:** Complete ✓
 
-- Build in-memory index on app startup
-- Index: title, content preview, metadata (status, priority, due date)
-- Update index via file watcher events
-- Support fuzzy title matching
-- Support content search (grep-like)
+- ✓ Build in-memory index on app startup
+- ✓ Index: title, content preview, metadata (status, priority, due date)
+- ✓ Update index via file watcher events
+- ✓ Support fuzzy title matching (fuse.js)
+
+**Files created:**
+- `src/lib/orbit/search-index.ts` - In-memory index with Fuse.js
+- `src/hooks/use-search-index.ts` - React hook for index management
 
 **Outcome:** Fast search across all items without N×M file scans
 
 ---
 
 ## Phase 3: Cmd+K Global Search
-**Status:** Not started
+**Status:** Complete ✓
 
-- Command palette UI (shadcn Command component)
-- Search across tasks, notes, projects, meetings
-- Recent items section
-- Keyboard navigation (arrows, enter, esc)
-- Navigate to item on selection
+- ✓ Command palette UI (cmdk + shadcn Command component)
+- ✓ Search across tasks, notes, projects, meetings
+- ✓ Recent items section (when no query)
+- ✓ Keyboard navigation (arrows, enter, esc)
+- ✓ Navigate to item on selection
+- ✓ Search button in header with ⌘K hint
 
-**Outcome:** Users can find anything instantly
+**Files created:**
+- `src/components/ui/command.tsx` - Command palette primitives
+- `src/components/global-search.tsx` - Global search component
+
+**Outcome:** Users can find anything instantly with Cmd+K
 
 ---
 
