@@ -79,11 +79,17 @@
 - Quick stats (tasks completed this week, etc.)
 - Quick capture without leaving dashboard
 
-### AI Context Integration
+### Knowledge Base Integration
 - Per-project `context/` folder
-- `CLAUDE.md` for AI instructions per project
 - Knowledge files (.md) for project context
+- Each Project should have "Knowledge Base" section
+- We probably dont need "Notes" tab if we have Knowledge Base?
 - Export project context for AI tools
+- It should be very nice to maintain context per project.
+  - Maybe a file browser, or another nice way to organize context files per project.
+- We would also have a global Knowledge Base for general info. 
+- Again its very important to nicely structure, and display these context files.
+- AI will be able to read these context files when generating content for that project.
 
 ### Testing Infrastructure
 - Unit tests for `lib/orbit/` (calculations, parser, search)
@@ -99,6 +105,7 @@
 - Microsoft 365 / IMAP support
 - Assign emails to projects
 - Email-to-task conversion
+- Draft replies from Orbit, using Knowledge Base context
 
 ### Calendar View
 - Task due dates on calendar
@@ -119,3 +126,10 @@
 - Read-only web view
 - Quick capture from phone
 - Sync via file system (iCloud/Dropbox)
+
+### Rethink Structure
+- Currently: We have "Areas" per Client/Company, then Projects inside Areas.
+- Where does global self company Info live?
+- Consider: Global Area for self-planning, separate from client Areas?
+- Global Space where infos across all Areas are shown, like all tasks due or something.
+- "Areas" should rather be named "Workspaces" or "Contexts" or "Clients"?
