@@ -10,9 +10,18 @@
 - [x] Update all stores, hooks, components
 - [x] Update documentation
 
+### Phase 2: Personal Space
+- [x] Add `PERSONAL` and `INBOX` constants to `PATH_SEGMENTS`
+- [x] Create `src/lib/orbit/personal.ts` with CRUD operations
+- [x] Create `src/stores/personal.ts` with TanStack Query hooks
+- [x] Add personal routes (`/personal/inbox`, `/personal/tasks`, `/personal/notes`)
+- [x] Update sidebar with Personal section above workspace navigation
+- [x] Initialize personal directory in `tauri-fs.ts`
+- [x] Add mock data for browser development mode
+
 ---
 
-## Phase 2: Personal Space
+## Phase 3: Dashboard
 
 **Goal**: Add a dedicated "Personal" section in the sidebar for quick capture and personal items that don't belong to any workspace/client.
 
