@@ -56,13 +56,24 @@ Build a solid foundation for file watching, search, and auto-save.
 
 ---
 
-## Phase 4: Auto-Save (Optional)
-**Status:** Not started
+## Phase 4: Auto-Save
+**Status:** Complete ✓
 
-- Debounced writes (buffer 1-2 seconds)
-- "Saving..." / "Saved" indicator
-- Handle conflicts (file changed while editing)
-- Remove explicit Save button from editors
+- ✓ Debounced writes (1.5 second buffer)
+- ✓ "Saving..." / "Saved" indicator in footer
+- ✓ Saves pending changes on close
+- ✓ Replaced "Save Changes" button with "Close" (auto-save handles persistence)
+- ✓ Project moves still require explicit action (Move & Save button)
+- ✓ Only enabled in Tauri mode (desktop)
+
+**Files created:**
+- `src/hooks/use-auto-save.ts` - Reusable auto-save hook with debouncing
+- `src/components/ui/save-status.tsx` - Save status indicator component
+
+**Files modified:**
+- `src/components/tasks/task-detail-panel.tsx` - Uses auto-save
+- `src/components/notes/note-editor.tsx` - Uses auto-save
+- `src/components/meetings/meeting-editor.tsx` - Uses auto-save
 
 **Outcome:** Obsidian-like instant persistence
 
