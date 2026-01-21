@@ -9,13 +9,14 @@
 │  Next.js App Router                                      │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
 │  │ /        │  │/projects │  │/settings │              │
-│  │ (tasks)  │  │  /notes  │  │          │              │
+│  │(dashboard)│  │  /notes  │  │ /tasks   │              │
 │  └──────────┘  └──────────┘  └──────────┘              │
 │                      │                                   │
 │  ┌───────────────────▼───────────────────┐              │
 │  │         lib/orbit/* (CRUD)            │              │
-│  │  areas.ts  projects.ts  tasks.ts      │              │
-│  │  notes.ts  meetings.ts                │              │
+│  │  workspaces.ts  projects.ts  tasks.ts │              │
+│  │  notes.ts  meetings.ts  personal.ts   │              │
+│  │  dashboard.ts  search-index.ts        │              │
 │  └───────────────────┬───────────────────┘              │
 │                      │                                   │
 │  ┌───────────────────▼───────────────────┐              │
@@ -53,7 +54,7 @@ Detection via `isTauri()` in `tauri-fs.ts`.
 ### State Management
 
 - **TanStack Query**: Server state (tasks, projects, notes, meetings)
-- **Zustand**: Client state (settings, current area)
+- **Zustand**: Client state (settings, current workspace)
 
 ## Module Structure
 
@@ -63,20 +64,24 @@ Detection via `isTauri()` in `tauri-fs.ts`.
 |------|---------|
 | `tauri-fs.ts` | File system abstraction (Tauri/mock) |
 | `parser.ts` | Markdown frontmatter parsing, date helpers |
-| `constants.ts` | Magic strings (SPECIAL_DIRS, PATH_SEGMENTS) |
-| `search.ts` | Cross-area search helpers |
-| `calculations.ts` | Business logic (task stats, grouping) |
-| `areas.ts` | Area CRUD operations |
+| `constants.ts` | Magic strings (SPECIAL_DIRS, PATH_SEGMENTS, PERSONAL_SPACE_ID) |
+| `workspaces.ts` | Workspace CRUD operations |
 | `projects.ts` | Project CRUD operations |
 | `tasks.ts` | Task CRUD operations |
 | `notes.ts` | Note CRUD operations |
 | `meetings.ts` | Meeting CRUD operations |
+| `personal.ts` | Personal space CRUD (inbox, tasks, notes) |
+| `dashboard.ts` | Cross-workspace data aggregation |
+| `search.ts` | Cross-workspace search helpers |
+| `search-index.ts` | In-memory Fuse.js search index |
+| `watcher.ts` | File system watcher service (Tauri) |
+| `calculations.ts` | Business logic (task stats, grouping) |
 
 ### Design System (`src/lib/`)
 
 | File | Purpose |
 |------|---------|
-| `design-tokens.ts` | Colors for status, priority, areas |
+| `design-tokens.ts` | Colors for status, priority, workspaces |
 | `utils.ts` | Utility functions (cn for classnames) |
 
 ### State Management (`src/stores/`)
@@ -84,6 +89,14 @@ Detection via `isTauri()` in `tauri-fs.ts`.
 - React Query hooks for server state
 - Zustand stores for client state
 - Grouped task helpers
+
+### Hooks (`src/hooks/`)
+
+| File | Purpose |
+|------|---------|
+| `use-auto-save.ts` | Debounced auto-save with error-only status |
+| `use-file-watcher.ts` | React hook for file watcher integration |
+| `use-search-index.ts` | React hook for search index management |
 
 ## File Format
 
@@ -105,4 +118,5 @@ Compatible with Obsidian for manual editing.
 ## Special Directories
 
 - `_unassigned` - Tasks/notes not belonging to any project
+- `personal/` - Personal space (inbox, tasks, notes)
 - `context/` - AI knowledge files (future)

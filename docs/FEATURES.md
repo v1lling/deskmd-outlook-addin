@@ -1,12 +1,26 @@
 # Orbit Features
 
-## Current (v0.2)
+## Current (v0.3)
 
-### Areas
-- Dropdown switcher in sidebar
+### Dashboard
+- **Capture widget**: Quick task capture with triage workflow
+  - Quick add input for instant task capture
+  - Amber highlighting when tasks await triage
+  - Triage menu: Move to Personal Tasks, Workspace/Project, or Delete
+  - Post-triage detail modal for adding priority and notes
+- **Focus widget**: Shows all in-progress tasks across workspaces
+- **Workspaces widget**: Overview of all workspaces with completion progress
+
+### Personal Space
+- Tasks and notes not tied to any workspace
+- Inbox for quick capture (triaged from Dashboard)
+- Separate from workspace-scoped content
+
+### Workspaces
 - Color-coded for visual distinction
-- Complete isolation between areas
-- Create/edit/delete areas
+- Inline in sidebar with expandable sub-navigation
+- Complete isolation between workspaces
+- Create/edit/delete workspaces
 
 ### Projects
 - Card grid with status badges (active/paused/completed/archived)
@@ -42,6 +56,21 @@
 - Filter option on All Tasks and Notes pages
 - Easy reassignment to projects
 
+### Global Search (Cmd+K)
+- Search tasks, notes, projects, meetings in one place
+- Fuzzy matching for titles and content
+- Quick navigation to any item
+- In-memory Fuse.js index for fast search
+
+### File Watcher
+- Auto-refresh UI when files change externally
+- Works with external editors (Obsidian, VS Code, etc.)
+
+### Auto-Save
+- Obsidian-like silent persistence
+- Error-only status indicator
+- Debounced saves to prevent excessive writes
+
 ### Settings
 - Theme: Light/Dark/System
 - Data folder path display and change
@@ -56,61 +85,64 @@
 
 ## Planned
 
-### Global Search (Cmd+K)
-- Search tasks, notes, projects, meetings in one place
-- Fuzzy matching for titles and content
-- Quick navigation to any item
-- Recent items list
-- Keyboard-first interaction
+### Testing Infrastructure
+- Unit tests for `lib/orbit/` (calculations, parser, search)
+- Integration tests for CRUD operations
+- Component tests for key UI flows
+- End-to-end tests for main user journeys
 
 ### Keyboard Shortcuts
-- `Cmd+K` - Open search
+- `Cmd+K` - Open search (implemented)
 - `Cmd+N` - New task
+  - Or new quick capture if in dashboard? Or always quick capture?
 - `Cmd+Shift+N` - New note
 - `Cmd+P` - New project
 - `Cmd+,` - Settings
 - `Esc` - Close modals/panels
 - Shortcut hints in UI tooltips
 
-### Dashboard/Home Page
-- Today's tasks (due today, overdue)
-- Tasks in progress across all projects
-- Recent activity feed
-- Quick stats (tasks completed this week, etc.)
-- Quick capture without leaving dashboard
-
 ### Knowledge Base Integration
 - Per-project `context/` folder
 - Knowledge files (.md) for project context
 - Each Project should have "Knowledge Base" section
-- We probably dont need "Notes" tab if we have Knowledge Base?
 - Export project context for AI tools
-- It should be very nice to maintain context per project.
-  - Maybe a file browser, or another nice way to organize context files per project.
-- We would also have a global Knowledge Base for general info. 
-- Again its very important to nicely structure, and display these context files.
-- AI will be able to read these context files when generating content for that project.
-
-### Testing Infrastructure
-- Unit tests for `lib/orbit/` (calculations, parser, search)
-- Integration tests for CRUD operations
-- Component tests for key UI flows
-
----
-
-## Future Ideas
+- Nice structure and display for context files per project
+- Global Knowledge Base for general info
+- AI reads context files when generating content
 
 ### Email Integration
-- Per-area email config
+- Per-workspace email config
 - Microsoft 365 / IMAP support
 - Assign emails to projects
 - Email-to-task conversion
-- Draft replies from Orbit, using Knowledge Base context
+- AI features:
+  - AI-assisted draft replies using Knowledge Base context
+  - Summarize email threads into tasks/notes
+  - Chat with AI about email content, get suggestions
+- Focus on task extraction and email drafting, not full email client
+- AI features are optional, opt-in
+- AI features are visually minimalistic
+  
+### AI Assistance
+- For Knowledge Base, Email, Task/Note creation
+- Context-aware suggestions
+- Nice framework which hands over context to AI models
+- Minimal UI impact
+- Configure AI providers in Settings
+- Technical:
+  - Modular AI integration layer
+  - Support for multiple AI providers
+  - Claude Code is a must, not sure how to do it as it need to access terminal?
 
-### Calendar View
-- Task due dates on calendar
-- Meeting scheduling
-- Drag tasks to reschedule
+### Mobile Companion
+- Read-only web view
+- Quick capture from phone
+- Sync via file system (iCloud/WebDAV/Dropbox)
+- Responsive design for small screens
+  
+---
+
+## Future Ideas
 
 ### Time Tracking
 - Log time on tasks
@@ -121,15 +153,3 @@
 - Project templates (common project structures)
 - Task templates (recurring task patterns)
 - Note templates (meeting notes, decisions)
-
-### Mobile Companion
-- Read-only web view
-- Quick capture from phone
-- Sync via file system (iCloud/Dropbox)
-
-### Rethink Structure
-- Currently: We have "Areas" per Client/Company, then Projects inside Areas.
-- Where does global self company Info live?
-- Consider: Global Area for self-planning, separate from client Areas?
-- Global Space where infos across all Areas are shown, like all tasks due or something.
-- "Areas" should rather be named "Workspaces" or "Contexts" or "Clients"?
