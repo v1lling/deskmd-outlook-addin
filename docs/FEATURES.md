@@ -1,32 +1,31 @@
 # Orbit Features
 
-## Current (v0.3)
+## Current (v0.4)
 
 ### Dashboard
-- **Capture widget**: Quick task capture with triage workflow
-  - Quick add input for instant task capture
-  - Amber highlighting when tasks await triage
-  - Triage menu: Move to Personal Tasks, Workspace/Project, or Delete
-  - Post-triage detail modal for adding priority and notes
+- **Capture widget**: Quick task capture with triage workflow to Personal or Workspace/Project
 - **Focus widget**: Shows all in-progress tasks across workspaces
 - **Workspaces widget**: Overview of all workspaces with completion progress
 
 ### Personal Space
-- Tasks and notes not tied to any workspace
-- Inbox for quick capture (triaged from Dashboard)
+- Tasks and docs not tied to any workspace
+- Inbox for quick capture
 - Separate from workspace-scoped content
 
 ### Workspaces
 - Color-coded for visual distinction
 - Inline in sidebar with expandable sub-navigation
 - Complete isolation between workspaces
+- Workspace-level docs (shared across all projects)
 - Create/edit/delete workspaces
 
 ### Projects
-- Card grid with status badges (active/paused/completed/archived)
-- Tabbed detail page: Overview, Tasks, Notes, Meetings
+- Listed inline in sidebar under each workspace (alphabetically sorted)
+- Tabbed detail page: Overview, Tasks, Docs, Meetings
+- Status badges (active/paused/completed/archived)
 - Task counts and progress indicators
 - Quick actions from overview tab
+- New Project button in sidebar
 
 ### Tasks
 - 4-column Kanban: Todo, Doing, Waiting, Done
@@ -38,12 +37,15 @@
 - Project reassignment from detail panel
 - Filter by project or show all/unassigned
 
-### Notes
+### Docs
+- **Tree structure**: Folders with unlimited nesting
+- **Multiple scopes**: Personal, Workspace-level, Project-level
 - WYSIWYG markdown editor (Tiptap)
-- Project grouping and filtering
-- Card-based list view with preview
-- Project reassignment
+- Drag-drop file import
+- Folder operations: create, rename, delete
+- Project reassignment (for project docs)
 - Filter by project or show unassigned
+- Tabbed view: Workspace docs vs All Projects
 
 ### Meetings
 - List view by project
@@ -51,13 +53,13 @@
 - Date tracking
 
 ### Unassigned Items
-- Tasks and notes can exist without a project
+- Tasks and docs can exist without a project
 - `_unassigned` special directory
-- Filter option on All Tasks and Notes pages
+- Filter option on All Tasks and Docs pages
 - Easy reassignment to projects
 
 ### Global Search (Cmd+K)
-- Search tasks, notes, projects, meetings in one place
+- Search tasks, docs, projects, meetings in one place
 - Fuzzy matching for titles and content
 - Quick navigation to any item
 - In-memory Fuse.js index for fast search
@@ -81,6 +83,11 @@
 - Detect existing Orbit data
 - Custom data path selection
 
+### UI/UX
+- **Custom scrollbars**: OverlayScrollbars for consistent cross-platform styling (Chrome + Tauri/WKWebView)
+- List/Kanban view toggle for tasks
+- Collapsible sidebar sections
+
 ---
 
 ## Planned
@@ -94,21 +101,18 @@
 ### Keyboard Shortcuts
 - `Cmd+K` - Open search (implemented)
 - `Cmd+N` - New task
-  - Or new quick capture if in dashboard? Or always quick capture?
-- `Cmd+Shift+N` - New note
+- `Cmd+Shift+N` - New doc
 - `Cmd+P` - New project
 - `Cmd+,` - Settings
 - `Esc` - Close modals/panels
 - Shortcut hints in UI tooltips
 
-### Knowledge Base Integration
-- Per-project `context/` folder
-- Knowledge files (.md) for project context
-- Each Project should have "Knowledge Base" section
+### AI Context Integration
+- Any doc can be flagged as "AI context"
+- AI features read flagged docs when generating content
+- Per-project context selection
 - Export project context for AI tools
-- Nice structure and display for context files per project
-- Global Knowledge Base for general info
-- AI reads context files when generating content
+- Global context docs for general info
 
 ### Email Integration
 - Per-workspace email config
@@ -116,30 +120,23 @@
 - Assign emails to projects
 - Email-to-task conversion
 - AI features:
-  - AI-assisted draft replies using Knowledge Base context
-  - Summarize email threads into tasks/notes
-  - Chat with AI about email content, get suggestions
-- Focus on task extraction and email drafting, not full email client
-- AI features are optional, opt-in
-- AI features are visually minimalistic
-  
+  - AI-assisted draft replies using context
+  - Summarize email threads into tasks/docs
+  - Chat with AI about email content
+- Focus on task extraction and email drafting
+
 ### AI Assistance
-- For Knowledge Base, Email, Task/Note creation
 - Context-aware suggestions
 - Nice framework which hands over context to AI models
 - Minimal UI impact
 - Configure AI providers in Settings
-- Technical:
-  - Modular AI integration layer
-  - Support for multiple AI providers
-  - Claude Code is a must, not sure how to do it as it need to access terminal?
 
 ### Mobile Companion
 - Read-only web view
 - Quick capture from phone
 - Sync via file system (iCloud/WebDAV/Dropbox)
 - Responsive design for small screens
-  
+
 ---
 
 ## Future Ideas
@@ -152,4 +149,4 @@
 ### Templates
 - Project templates (common project structures)
 - Task templates (recurring task patterns)
-- Note templates (meeting notes, decisions)
+- Doc templates (meeting notes, decisions)
