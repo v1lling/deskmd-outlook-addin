@@ -38,7 +38,7 @@ The application has a clear three-level hierarchy:
 
 ```
 Personal Space (not workspace-scoped)
-├── Inbox (quick capture, triage from here)
+├── Capture (quick capture, triage from here)
 ├── Tasks
 └── Docs
 
@@ -66,7 +66,7 @@ Workspace (Client/Context)
 ~/Orbit/
 ├── config.json                     # App settings (theme, current workspace)
 ├── personal/                       # Personal space (PERSONAL_SPACE_ID)
-│   ├── inbox/
+│   ├── capture/
 │   │   └── tasks/*.md              # Quick capture items
 │   ├── tasks/*.md                  # Personal tasks
 │   └── docs/                       # Personal docs (tree structure)
@@ -106,7 +106,7 @@ export const PATH_SEGMENTS = {
   TASKS: "tasks",
   DOCS: "docs",
   MEETINGS: "meetings",
-  INBOX: "inbox",
+  CAPTURE: "capture",
 } as const;
 
 export const SPECIAL_DIRS = {
@@ -181,7 +181,7 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 | `tasks.ts` | Task CRUD operations |
 | `docs.ts` | Doc CRUD + tree operations (folders, import) |
 | `meetings.ts` | Meeting CRUD operations |
-| `personal.ts` | Personal space CRUD (inbox, tasks, docs) |
+| `personal.ts` | Personal space CRUD (capture, tasks, docs) |
 | `dashboard.ts` | Cross-workspace data aggregation |
 | `search.ts` | Cross-workspace search helpers |
 | `search-index.ts` | In-memory Fuse.js search index |

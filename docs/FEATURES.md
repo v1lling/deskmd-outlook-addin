@@ -9,7 +9,7 @@
 
 ### Personal Space
 - Tasks and docs not tied to any workspace
-- Inbox for quick capture
+- Capture widget on Dashboard for quick capture (triage to Personal or Workspace)
 - Separate from workspace-scoped content
 
 ### Workspaces
