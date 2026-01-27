@@ -260,3 +260,136 @@ Docs can be flagged for AI context in the future. This is not yet implemented, b
 - Any doc can be marked as "AI context"
 - AI features will read flagged docs when generating content
 - No separate "context" folder - just metadata on docs
+
+## File System Integration
+
+The app uses a dual-layer architecture for file access: one for **closed files** (list views, sidebar) and one for **open files** (editor tabs).
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FILE SYSTEM (tauri-fs.ts)                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+        │                                               │
+        ▼                                               ▼
+┌───────────────────┐                         ┌───────────────────┐
+│   FILE WATCHER    │                         │ DOMAIN OPERATIONS │
+│   (watcher.ts)    │                         │ (move, delete)    │
+└───────────────────┘                         └───────────────────┘
+        │                                               │
+        ▼                                               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        OPEN EDITOR REGISTRY                                  │
+│                                                                              │
+│  isOpen(path) ──► YES: Route to EditorEventBus → Editor updates             │
+│              └──► NO:  Route to QueryInvalidator → TanStack refetch         │
+└─────────────────────────────────────────────────────────────────────────────┘
+        │                                       │
+        ▼                                       ▼
+┌─────────────────────────┐             ┌─────────────────────────┐
+│   OPEN FILES (Editors)  │             │  CLOSED FILES (Lists)   │
+│   useEditorSession()    │             │  FileTreeService cache  │
+│   Direct writeTextFile  │             │  TanStack Query         │
+└─────────────────────────┘             └─────────────────────────┘
+```
+
+### Key Principle
+
+```
+When file is OPEN in editor tab:
+  → Editor owns state (useEditorSession hook)
+  → File watcher routes changes to editor via EditorEventBus
+  → Auto-save with 400ms debounce (Obsidian-like)
+  → Detects external changes via lastSavedContent comparison
+
+When file is CLOSED:
+  → TanStack Query owns state
+  → FileTreeService provides cached content
+  → File watcher invalidates queries for refetch
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/stores/open-editor-registry.ts` | Zustand store tracking all open editor sessions by path |
+| `src/stores/editor-event-bus.ts` | Pub/sub for routing external changes to editors |
+| `src/hooks/use-editor-session.ts` | Hook for editor state with auto-save |
+| `src/hooks/use-query-invalidator.ts` | Routes file watcher events to editors or TanStack |
+| `src/lib/orbit/file-cache/` | Cached file tree for list views (LRU cache, 50MB limit) |
+| `src/lib/orbit/watcher.ts` | Tauri file system watcher |
+
+### Editor State Management
+
+Editors (DocEditor, TaskEditor, MeetingEditor) use `useEditorSession()`:
+
+```typescript
+const {
+  content,           // Current editor content
+  setContent,        // Update content (triggers 400ms debounced save)
+  isDirty,           // Has unsaved changes
+  saveStatus,        // "idle" | "saving" | "error"
+  pathChanged,       // File was moved/renamed externally
+  newPath,           // New path after move
+  fileDeleted,       // File was deleted externally
+  acknowledgePathChange,  // Accept new path
+  acknowledgeDeleted,     // Accept deletion
+  forceSave,         // Save immediately
+} = useEditorSession({
+  type: "doc",       // "doc" | "task" | "meeting"
+  entityId: docId,
+  filePath: doc?.filePath,
+  initialContent: doc?.content ?? "",
+  enabled: !!doc,
+});
+```
+
+### How External Changes Are Detected
+
+1. File watcher detects change
+2. `useQueryInvalidator` checks `OpenEditorRegistry.isOpen(path)`
+3. If open: read file, compare with `lastSavedContent`
+   - Matches → our save, ignore
+   - Different → external change, publish via `EditorEventBus`
+4. If closed: invalidate TanStack Query
+
+### Path Safety in Domain Operations
+
+When moving/deleting files, domain operations notify open editors:
+
+```typescript
+// In tasks.ts, docs.ts, meetings.ts
+import { useOpenEditorRegistry } from "@/stores/open-editor-registry";
+import { publishPathChange, publishDeleted } from "@/stores/editor-event-bus";
+
+// Before delete
+if (registry.isOpen(filePath)) {
+  registry.handlePathDeleted(filePath);
+  publishDeleted(filePath);
+}
+
+// After move
+if (registry.isOpen(oldPath)) {
+  registry.handlePathChange(oldPath, newPath);
+  publishPathChange(oldPath, newPath);
+}
+```
+
+### Debugging File System Issues
+
+| Symptom | Likely Cause | Check |
+|---------|--------------|-------|
+| Cursor jumps while typing | TanStack Query refetching | Is file registered in OpenEditorRegistry? |
+| External edits not showing | Event bus not connected | Check subscribeToEditorEvents call |
+| File move breaks editor | Path safety missing | Check domain operation notifies registry |
+| Infinite re-renders | Zustand dependency loop | Use `getState()` not hook in effects |
+| Stale list data | Cache not invalidated | Check watcher → QueryInvalidator flow |
+
+### Important Implementation Notes
+
+1. **Editors write directly** to disk via `writeTextFile()`, NOT through FileTreeService
+2. **lastSavedContent** comparison prevents reacting to our own saves
+3. **getRegistry()** pattern avoids Zustand re-render loops in effects
+4. **400ms debounce** matches Obsidian's fast-save behavior
+5. **FileMovedBanner/FileDeletedBanner** handle edge cases gracefully
