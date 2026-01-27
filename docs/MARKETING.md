@@ -9,7 +9,7 @@
 1. **Own your data** - Plain markdown files, take them anywhere, never locked in
 2. **Client-centric organization** - Areas = clients, everything nested logically
 3. **Techy but approachable** - Power of local files, polish of a real app
-4. **AI-ready architecture** - Project context for intelligent assistance (coming)
+4. **AI-powered assistance** - Project context feeds Claude for intelligent suggestions
 5. **No subscription treadmill** - Desktop app, your files, your rules
 
 ## Target Audience

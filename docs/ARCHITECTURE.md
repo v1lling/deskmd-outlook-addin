@@ -205,10 +205,14 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 
 | File | Purpose |
 |------|---------|
+| `use-editor-session.ts` | Editor state with auto-save, external change detection |
+| `use-query-invalidator.ts` | Routes file watcher events to editors or TanStack Query |
 | `use-auto-save.ts` | Debounced auto-save with error-only status |
-| `use-file-watcher.ts` | React hook for file watcher integration |
 | `use-search-index.ts` | React hook for search index management |
-| `use-view-mode.ts` | Persisted view mode (kanban/list) |
+| `use-project-name.ts` | Project name lookup by ID |
+| `use-open-from-query.ts` | Handle `?open=id` URL params |
+| `use-grouped-items.ts` | Group items by a key function |
+| `use-editor-tab.ts` | Manage editor tab title/dirty state |
 
 ## File Format
 

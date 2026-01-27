@@ -28,7 +28,7 @@ The codebase has **improved significantly** since the last review with better co
 
 ### What's New (Good)
 - Tab-based editing system (`src/components/tabs/`, `src/stores/tabs.ts`)
-- File tree service with watcher integration (`src/lib/orbit/file-tree/`)
+- File cache service with watcher integration (`src/lib/orbit/file-cache/`)
 - Better component structure for editors (`src/components/editors/`)
 - MetadataToolbar abstraction for consistent metadata editing
 - **Error boundary** catches React errors gracefully (`src/components/error-boundary.tsx`)
@@ -131,8 +131,8 @@ Logging is used strategically with prefixes (`[watcher]`, `[search-index]`) but 
 **Files with most console usage:**
 - `src/lib/orbit/tauri-fs.ts` (8 instances - mock mode)
 - `src/lib/orbit/watcher.ts` (6 instances)
-- `src/lib/orbit/file-tree/service.ts` (7 instances)
-- `src/hooks/use-file-watcher.ts` (2 instances)
+- `src/lib/orbit/file-cache/service.ts` (7 instances)
+- `src/hooks/use-query-invalidator.ts` (2 instances)
 
 ### 7. Large Components
 **Status:** ⚠️ Worse than before
@@ -177,8 +177,8 @@ export const DEFAULT_WORKSPACE_COLOR = "#64748b"; // slate-500
 
 ## Minor Issues (Nice to Have)
 
-### 10. Race Condition in File Watcher
-**Location:** `src/hooks/use-file-watcher.ts:50-54`
+### 10. Race Condition in Query Invalidator
+**Location:** `src/hooks/use-query-invalidator.ts`
 
 ```typescript
 fileTreeService.initialize().then(() => {

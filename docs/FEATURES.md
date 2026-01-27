@@ -83,6 +83,26 @@
 - Detect existing Orbit data
 - Custom data path selection
 
+### Tab-Based Editing (Obsidian-style)
+- "Orbit" tab is always pinned, showing current app view
+- Clicking docs/tasks/meetings opens them in new tabs
+- Full-width editors with markdown WYSIWYG (Tiptap)
+- Tab state persists in localStorage
+- Keyboard shortcuts: Cmd+W close, Cmd+Shift+[ ] switch tabs
+
+### AI Chat
+- Slide panel accessible from any view
+- **Providers**: Claude Code CLI or Anthropic API
+- **Doc context**: Attach docs from current scope for AI awareness
+- Conversation history per session
+- Configure AI provider in Settings
+
+### Editor State Management
+- 400ms debounced auto-save (Obsidian-like fast saves)
+- External change detection (works with Obsidian, VS Code editing)
+- Path change and deletion handling with user notifications
+- Cursor-stable editing (no jumps during external changes)
+
 ### UI/UX
 - **Custom scrollbars**: OverlayScrollbars for consistent cross-platform styling (Chrome + Tauri/WKWebView)
 - List/Kanban view toggle for tasks
