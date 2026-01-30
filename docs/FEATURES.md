@@ -103,6 +103,14 @@
 - Path change and deletion handling with user notifications
 - Cursor-stable editing (no jumps during external changes)
 
+### Email Integration
+- **Deep links**: External mail clients send emails via `orbit://email?data=...`
+- **Outlook Add-in**: "Open in Orbit" button in Outlook ribbon (hosted on GitHub Pages)
+- **Email viewer**: Session-only tab display (not persisted)
+- **Draft Reply**: AI-assisted draft generation with editable To/CC/Subject fields
+- **Send**: Opens mailto: in default mail client
+- *Coming soon*: Project context for AI drafts, Extract Tasks from emails
+
 ### UI/UX
 - **Custom scrollbars**: OverlayScrollbars for consistent cross-platform styling (Chrome + Tauri/WKWebView)
 - List/Kanban view toggle for tasks
@@ -133,17 +141,6 @@
 - Per-project context selection
 - Export project context for AI tools
 - Global context docs for general info
-
-### Email Integration
-- Per-workspace email config
-- Microsoft 365 / IMAP support
-- Assign emails to projects
-- Email-to-task conversion
-- AI features:
-  - AI-assisted draft replies using context
-  - Summarize email threads into tasks/docs
-  - Chat with AI about email content
-- Focus on task extraction and email drafting
 
 ### AI Assistance
 - Context-aware suggestions
