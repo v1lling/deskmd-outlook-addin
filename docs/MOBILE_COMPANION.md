@@ -1,6 +1,6 @@
 # Mobile Companion Research
 
-> Research notes for future Orbit mobile app (iOS/Android)
+> Research notes for future Desk mobile app (iOS/Android)
 
 ## Key Questions & Answers
 
@@ -8,7 +8,7 @@
 **Yes.** Tauri 2.0 supports iOS and Android. iOS requires macOS + Xcode. Same codebase as desktop (web view).
 
 ### Can we just read files from the filesystem like on desktop?
-**No.** iOS sandboxes apps - they can only access their own container. No reading arbitrary folders like `~/Orbit/`. Android is more permissive but still needs explicit permissions.
+**No.** iOS sandboxes apps - they can only access their own container. No reading arbitrary folders like `~/Desk/`. Android is more permissive but still needs explicit permissions.
 
 ### Does iCloud "just work"?
 **Not really.** iOS controls sync timing (battery, network, thermal state). Apps cannot force sync. Background sync can take "minutes to an hour". New devices take up to 7 days to "learn" usage patterns. Files can get evicted from local storage. No conflict resolution for file-based apps. See [deep dive by Carlo Zottmann](https://zottmann.org/2025/09/08/ios-icloud-drive-synchronization-deep.html).
@@ -31,7 +31,7 @@
 **Don't rely on iOS file providers.** Build API-based sync instead:
 
 ```
-Desktop:  Read/write ~/Orbit/ directly (current)
+Desktop:  Read/write ~/Desk/ directly (current)
 Mobile:   App sandbox ↔ WebDAV API ↔ Nextcloud/NAS ↔ Files
 ```
 
@@ -57,7 +57,7 @@ Simple timestamp comparison:
 1. List remote files (WebDAV PROPFIND)
 2. List local files
 3. Compare modification times - later wins
-4. Track deletions via metadata file (`.orbit-sync.json`)
+4. Track deletions via metadata file (`.desk-sync.json`)
 5. Handle conflicts: prompt user or duplicate file
 
 ### Server Compatibility

@@ -5,7 +5,7 @@
 | Feature | Status |
 |---------|--------|
 | Outlook Add-in | ✅ Working |
-| Deep links (`orbit://email?data=...`) | ✅ Working |
+| Deep links (`desk://email?data=...`) | ✅ Working |
 | Email tab display | ✅ Working |
 | Draft Reply UI | ✅ Working |
 | mailto: send | ✅ Working |
@@ -28,16 +28,16 @@ The add-in is hosted on GitHub Pages. No local server needed.
 ### Use
 
 1. Open any email in Outlook
-2. Click **"Open in Orbit"** button in the ribbon
-3. Confirm the "Open Orbit?" dialog
-4. Email opens in Orbit as a tab
+2. Click **"Open in Desk"** button in the ribbon
+3. Confirm the "Open Desk?" dialog
+4. Email opens in Desk as a tab
 
 ## How It Works
 
 ```
 Outlook Add-in (GitHub Pages)
     ↓
-Extracts email → base64 encodes → opens orbit://email?data={base64}
+Extracts email → base64 encodes → opens desk://email?data={base64}
     ↓
 Tauri deep-link plugin receives URL
     ↓
@@ -50,14 +50,14 @@ User clicks "Draft Reply" → AI generates draft → opens mailto:
 
 The add-in files are hosted on a separate public repo via git subtree:
 
-- **Public repo**: https://github.com/v1lling/orbit-outlook-addin
-- **GitHub Pages URL**: https://v1lling.github.io/orbit-outlook-addin/
+- **Public repo**: https://github.com/v1lling/desk-outlook-addin
+- **GitHub Pages URL**: https://v1lling.github.io/desk-outlook-addin/
 - **Local source**: `outlook-addin/src/` (pushed via subtree)
 
 ### Deploy Changes
 
 ```bash
-# From orbit root - pushes outlook-addin/src to public repo
+# From desk root - pushes outlook-addin/src to public repo
 npm run deploy --prefix outlook-addin
 ```
 

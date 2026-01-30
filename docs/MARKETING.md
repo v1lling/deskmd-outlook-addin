@@ -27,4 +27,4 @@
 
 ## Positioning Statement
 
-> Orbit is a project workspace for freelancers who want client organization without cloud lock-in. Your projects, your markdown files, your control.
+> Desk is a project workspace for freelancers who want client organization without cloud lock-in. Your projects, your markdown files, your control.

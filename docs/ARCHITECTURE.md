@@ -1,4 +1,4 @@
-# Orbit Architecture
+# Desk Architecture
 
 ## System Overview
 
@@ -13,7 +13,7 @@
 │  └──────────┘  └──────────┘  └──────────┘              │
 │                      │                                   │
 │  ┌───────────────────▼───────────────────┐              │
-│  │         lib/orbit/* (CRUD)            │              │
+│  │         lib/desk/* (CRUD)            │              │
 │  │  workspaces.ts  projects.ts  tasks.ts │              │
 │  │  content.ts  meetings.ts  personal.ts │              │
 │  │  dashboard.ts  search-index.ts        │              │
@@ -27,7 +27,7 @@
                        │
                        ▼
             ┌─────────────────┐
-            │   ~/Orbit/      │
+            │   ~/Desk/      │
             │  (Markdown FS)  │
             └─────────────────┘
 ```
@@ -63,7 +63,7 @@ Workspace (Client/Context)
 ## File Structure
 
 ```
-~/Orbit/
+~/Desk/
 ├── config.json                     # App settings (theme, current workspace)
 ├── personal/                       # Personal space (PERSONAL_SPACE_ID)
 │   ├── capture/
@@ -96,7 +96,7 @@ Workspace (Client/Context)
 
 ## Path Constants
 
-All paths are centralized in `src/lib/orbit/constants.ts`:
+All paths are centralized in `src/lib/desk/constants.ts`:
 
 ```typescript
 export const PATH_SEGMENTS = {
@@ -153,7 +153,7 @@ Detection via `isTauri()` in `tauri-fs.ts`.
 | Type | Format | Location | Purpose |
 |------|--------|----------|---------|
 | Content data | Markdown + YAML frontmatter | `*.md` files | Tasks, docs, projects |
-| Global config | JSON | `~/Orbit/config.json` | App settings |
+| Global config | JSON | `~/Desk/config.json` | App settings |
 | View state | JSON | `.view.json` per folder | UI preferences (task order, expanded folders) |
 
 **Key principle:** Content data belongs in markdown (portable). UI preferences belong in `.view.json` (can be regenerated).
@@ -163,13 +163,13 @@ Detection via `isTauri()` in `tauri-fs.ts`.
 Uses **OverlayScrollbars** instead of native scrollbars for consistent styling across Chrome and Tauri (WKWebView on macOS, which doesn't support `::-webkit-scrollbar`).
 
 - `ScrollArea` component wraps scrollable content
-- Theme defined in `globals.css` as `.os-theme-orbit`
+- Theme defined in `globals.css` as `.os-theme-desk`
 - Always visible (`autoHide: "never"`)
 - Popup components (Select, DropdownMenu, Command) use native scroll (intentional)
 
 ## Module Structure
 
-### Core Data Layer (`src/lib/orbit/`)
+### Core Data Layer (`src/lib/desk/`)
 
 | File | Purpose |
 |------|---------|
@@ -329,8 +329,8 @@ When file is CLOSED:
 | `src/stores/editor-event-bus.ts` | Pub/sub for routing external changes to editors |
 | `src/hooks/use-editor-session.ts` | Hook for editor state with auto-save |
 | `src/hooks/use-query-invalidator.ts` | Routes file watcher events to editors or TanStack |
-| `src/lib/orbit/file-cache/` | Cached file tree for list views (LRU cache, 50MB limit) |
-| `src/lib/orbit/watcher.ts` | Tauri file system watcher |
+| `src/lib/desk/file-cache/` | Cached file tree for list views (LRU cache, 50MB limit) |
+| `src/lib/desk/watcher.ts` | Tauri file system watcher |
 
 ### Editor State Management
 

@@ -1,4 +1,4 @@
-# Orbit Features
+# Desk Features
 
 ## Current (v0.4)
 
@@ -80,11 +80,11 @@
 
 ### Setup
 - First-run wizard
-- Detect existing Orbit data
+- Detect existing Desk data
 - Custom data path selection
 
 ### Tab-Based Editing (Obsidian-style)
-- "Orbit" tab is always pinned, showing current app view
+- "Desk" tab is always pinned, showing current app view
 - Clicking docs/tasks/meetings opens them in new tabs
 - Full-width editors with markdown WYSIWYG (Tiptap)
 - Tab state persists in localStorage
@@ -104,8 +104,8 @@
 - Cursor-stable editing (no jumps during external changes)
 
 ### Email Integration
-- **Deep links**: External mail clients send emails via `orbit://email?data=...`
-- **Outlook Add-in**: "Open in Orbit" button in Outlook ribbon (hosted on GitHub Pages)
+- **Deep links**: External mail clients send emails via `desk://email?data=...`
+- **Outlook Add-in**: "Open in Desk" button in Outlook ribbon (hosted on GitHub Pages)
 - **Email viewer**: Session-only tab display (not persisted)
 - **Draft Reply**: AI-assisted draft generation with editable To/CC/Subject fields
 - **Send**: Opens mailto: in default mail client
@@ -121,7 +121,7 @@
 ## Planned
 
 ### Testing Infrastructure
-- Unit tests for `lib/orbit/` (calculations, parser, search)
+- Unit tests for `lib/desk/` (calculations, parser, search)
 - Integration tests for CRUD operations
 - Component tests for key UI flows
 - End-to-end tests for main user journeys

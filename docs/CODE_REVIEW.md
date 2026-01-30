@@ -1,4 +1,4 @@
-# Orbit Codebase Review - Production Readiness
+# Desk Codebase Review - Production Readiness
 
 > Review Date: 2025-01-25 (Updated)
 > Previous Review: 2025-01-19
@@ -28,7 +28,7 @@ The codebase has **improved significantly** since the last review with better co
 
 ### What's New (Good)
 - Tab-based editing system (`src/components/tabs/`, `src/stores/tabs.ts`)
-- File cache service with watcher integration (`src/lib/orbit/file-cache/`)
+- File cache service with watcher integration (`src/lib/desk/file-cache/`)
 - Better component structure for editors (`src/components/editors/`)
 - MetadataToolbar abstraction for consistent metadata editing
 - **Error boundary** catches React errors gracefully (`src/components/error-boundary.tsx`)
@@ -129,9 +129,9 @@ Error handling uses raw `console.warn/error` with no structure:
 Logging is used strategically with prefixes (`[watcher]`, `[search-index]`) but should be centralized.
 
 **Files with most console usage:**
-- `src/lib/orbit/tauri-fs.ts` (8 instances - mock mode)
-- `src/lib/orbit/watcher.ts` (6 instances)
-- `src/lib/orbit/file-cache/service.ts` (7 instances)
+- `src/lib/desk/tauri-fs.ts` (8 instances - mock mode)
+- `src/lib/desk/watcher.ts` (6 instances)
+- `src/lib/desk/file-cache/service.ts` (7 instances)
 - `src/hooks/use-query-invalidator.ts` (2 instances)
 
 ### 7. Large Components
@@ -191,7 +191,7 @@ If component unmounts before `initialize()` completes, `connectToWatcher()` stil
 **Fix:** Add AbortController or track unmount state.
 
 ### 11. Unsafe `.pop()!` Assertion
-**Location:** `src/lib/orbit/personal.ts:339, 395`
+**Location:** `src/lib/desk/personal.ts:339, 395`
 
 ```typescript
 task.filePath.split("/").pop()!  // Could be undefined if path is "/"
@@ -251,10 +251,10 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
 const isDev = process.env.NODE_ENV === "development";
 
 export const logger = {
-  debug: (...args: unknown[]) => isDev && console.log("[orbit]", ...args),
-  info: (...args: unknown[]) => console.info("[orbit]", ...args),
-  warn: (...args: unknown[]) => console.warn("[orbit]", ...args),
-  error: (...args: unknown[]) => console.error("[orbit]", ...args),
+  debug: (...args: unknown[]) => isDev && console.log("[desk]", ...args),
+  info: (...args: unknown[]) => console.info("[desk]", ...args),
+  warn: (...args: unknown[]) => console.warn("[desk]", ...args),
+  error: (...args: unknown[]) => console.error("[desk]", ...args),
 };
 ```
 
@@ -290,7 +290,7 @@ Move `DEFAULT_WORKSPACE_COLOR` to `design-tokens.ts`.
 - Extract drag logic from `kanban-board.tsx` into `useDragAndDrop` hook
 
 #### 3.3 Standardize Error Handling
-Apply logger pattern across all `lib/orbit/*.ts` files.
+Apply logger pattern across all `lib/desk/*.ts` files.
 
 ---
 
