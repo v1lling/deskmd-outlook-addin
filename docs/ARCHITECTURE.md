@@ -15,7 +15,7 @@
 │  ┌───────────────────▼───────────────────┐              │
 │  │         lib/orbit/* (CRUD)            │              │
 │  │  workspaces.ts  projects.ts  tasks.ts │              │
-│  │  docs.ts  meetings.ts  personal.ts    │              │
+│  │  content.ts  meetings.ts  personal.ts │              │
 │  │  dashboard.ts  search-index.ts        │              │
 │  └───────────────────┬───────────────────┘              │
 │                      │                                   │
@@ -179,7 +179,7 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 | `workspaces.ts` | Workspace CRUD operations |
 | `projects.ts` | Project CRUD operations |
 | `tasks.ts` | Task CRUD operations |
-| `docs.ts` | Doc CRUD + tree operations (folders, import) |
+| `content.ts` | Doc/Asset CRUD + content tree operations (folders, import) |
 | `meetings.ts` | Meeting CRUD operations |
 | `personal.ts` | Personal space CRUD (capture, tasks, docs) |
 | `dashboard.ts` | Cross-workspace data aggregation |
@@ -231,21 +231,29 @@ Task content here...
 
 Compatible with Obsidian for manual editing.
 
-## Docs System
+## Content System
 
-Docs support a hierarchical folder structure with unlimited nesting:
+The content tree supports markdown docs (editable) and assets (non-markdown files that open externally):
 
 ```typescript
-type DocScope = 'personal' | 'workspace' | 'project';
+type ContentScope = 'personal' | 'workspace' | 'project';
 
-interface DocTreeNode =
-  | { type: 'folder'; folder: DocFolder }
-  | { type: 'doc'; doc: Doc };
+type FileTreeNode =
+  | { type: 'folder'; folder: ContentFolder }
+  | { type: 'doc'; doc: Doc }
+  | { type: 'asset'; asset: Asset };
 
-interface DocFolder {
+interface ContentFolder {
   name: string;
   path: string;
-  children: DocTreeNode[];
+  children: FileTreeNode[];
+}
+
+interface Asset {
+  id: string;        // filename (display name)
+  path: string;      // relative path
+  filePath: string;  // absolute path
+  extension: string; // e.g., "pdf", "png"
 }
 ```
 
@@ -363,7 +371,7 @@ const {
 When moving/deleting files, domain operations notify open editors:
 
 ```typescript
-// In tasks.ts, docs.ts, meetings.ts
+// In tasks.ts, content.ts, meetings.ts
 import { useOpenEditorRegistry } from "@/stores/open-editor-registry";
 import { publishPathChange, publishDeleted } from "@/stores/editor-event-bus";
 

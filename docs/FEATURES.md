@@ -154,6 +154,11 @@
 - Sync via file system (iCloud/WebDAV/Dropbox)
 - Responsive design for small screens
 
+## Move away from Nextjs
+- Migrate to pure Tauri + React setup
+- We don't need server-side rendering
+- Simplify build and deployment
+
 ---
 
 ## Future Ideas
