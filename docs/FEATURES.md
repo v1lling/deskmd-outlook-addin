@@ -120,6 +120,14 @@
 
 ## Planned
 
+### Navigation & UX Restructure
+- See [UX-AUDIT.md](UX-AUDIT.md) for full analysis
+- Consider project-first navigation (vs current workspace-first)
+- Add dedicated `/projects` page
+- Add recent projects widget to Dashboard
+- Simplify workspace-level vs project-level content distinction
+- Make workspace context more explicit on pages
+
 ### Testing Infrastructure
 - Unit tests for `lib/desk/` (calculations, parser, search)
 - Integration tests for CRUD operations
