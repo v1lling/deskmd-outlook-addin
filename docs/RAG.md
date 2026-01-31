@@ -1,102 +1,686 @@
 # Task: RAG Integration and better AI Context Handling
 
-> Status: Planning (not yet implemented)
+> Status: **Ready for Implementation**
 
 ## Goal
 
-Introduce Retrieval-Augmented Generation (RAG) into Desk to enhance AI capabilities. Allow users to flag specific documents as "AI context," which the AI can utilize when generating content or providing suggestions.
+Introduce Retrieval-Augmented Generation (RAG) into Desk to enhance AI capabilities. Instead of manually attaching docs to chat, the AI automatically finds relevant context from your indexed documents.
 
-## Requirements
+## Decisions Summary
 
-- **Local-only** - No cloud dependencies, ships with the app
-- **Lightweight** - Minimal bundle size impact
-- **Markdown-aware** - Understand frontmatter, headers, structure
-- **Find relevant context** - Instead of sending all data to AI
+| Decision | Choice |
+|----------|--------|
+| **Embedding providers** | User's choice: Ollama (local) / OpenAI / Voyage - swappable in settings |
+| **Vector DB** | sqlite-vec (Rust implementation in Tauri) |
+| **What gets indexed** | Docs, Tasks, Meetings (all content types) |
+| **Scope** | All workspaces, cross-workspace search (simplest approach) |
+| **Default inclusion** | Everything included by default |
+| **Exclusion method** | `.aiignore` files + frontmatter `ai: false` |
+| **Chunking** | Hybrid (headers for large files, single chunk for small) |
+| **Retrieval count** | Default 5, configurable in settings |
+| **Show sources** | Yes, collapsible "Sources" in AI responses with similarity % |
+| **Pin docs feature** | Replaced by RAG |
+| **Non-MD files** | Phase 7: Add PDF, Word, txt support |
 
-## Recommended Stack
+---
 
-| Component | Recommendation | Why |
-|-----------|----------------|-----|
-| **Vector DB** | `sqlite-vec` | SQLite extension, no separate process, ships as single file |
-| **Embeddings** | Voyage (cloud) or `nomic-embed-text` (local) | Voyage = best quality; nomic via Ollama for fully local |
-| **Chunking** | Custom markdown-aware splitter | Preserve frontmatter, respect headers |
+## Embedding Providers
+
+**User chooses in settings** - fully swappable:
+
+| Provider | Model | Cost | Quality | Dims | Offline |
+|----------|-------|------|---------|------|---------|
+| **Ollama** | nomic-embed-text | Free | Good | 384 | ✓ |
+| **OpenAI** | text-embedding-3-small | $0.02/1M | Good | 1536 | ✗ |
+| **Voyage** | voyage-3.5-lite | $0.02/1M | Better | 1024 | ✗ |
+
+**Strategy**:
+1. User selects provider in Settings → RAG tab
+2. Default: "Auto" (tries Ollama first, then falls back to configured cloud)
+3. Switching providers requires re-indexing (different vector dimensions)
+
+**Note**: OpenAI and Voyage are same price. Voyage is technically better for RAG (built by Stanford retrieval researchers), OpenAI is more mainstream. User decides.
+
+---
 
 ## Architecture
 
+### System Overview
+
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     AI Chat Panel                        │
-├─────────────────────────────────────────────────────────┤
-│  User Query                                              │
-│       │                                                  │
-│       ▼                                                  │
-│  ┌─────────────┐    ┌──────────────┐    ┌────────────┐ │
-│  │   Embed     │───▶│  sqlite-vec  │───▶│  Top-K     │ │
-│  │   Query     │    │   Search     │    │  Chunks    │ │
-│  └─────────────┘    └──────────────┘    └────────────┘ │
-│                                                │        │
-│                                                ▼        │
-│                                         ┌────────────┐  │
-│                                         │   Claude   │  │
-│                                         │  + Context │  │
-│                                         └────────────┘  │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (React)                          │
+├─────────────────────────────────────────────────────────────────┤
+│  src/lib/rag/           │  src/stores/rag.ts                    │
+│  - chunker.ts           │  - RAG settings                       │
+│  - aiignore.ts          │  - Index status                       │
+│  - index.ts (API)       │                                       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ Tauri Commands (invoke)
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Tauri Backend (Rust)                         │
+├─────────────────────────────────────────────────────────────────┤
+│  src-tauri/src/rag/                                              │
+│  ├── mod.rs             # Module exports + Tauri commands       │
+│  ├── db.rs              # sqlite-vec database operations        │
+│  ├── embeddings.rs      # Ollama + Voyage HTTP clients          │
+│  └── search.rs          # Similarity search                     │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  {dataPath}/.index/vectors.db (sqlite-vec)                      │
+│  (dataPath from user settings, e.g. ~/Desk or ~/MyData)         │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Two Paths
+### Indexing Flow
 
-### Option A: Hybrid (Recommended)
+```
+Document (md/docx/pdf)
+     │
+     ▼ (Frontend)
+┌─────────────┐     ┌─────────────────┐
+│  Extract    │────▶│  Chunk by       │
+│  text       │     │  headers/size   │
+└─────────────┘     └─────────────────┘
+                             │
+                             ▼ Tauri command: rag_index_chunks
+┌─────────────────────────────────────────────────────────────────┐
+│                     Rust Backend                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐     ┌─────────────────┐     ┌──────────────┐  │
+│  │  Embed via  │────▶│  Store in       │────▶│  Return      │  │
+│  │  Ollama or  │     │  sqlite-vec     │     │  status      │  │
+│  │  Voyage     │     │                 │     │              │  │
+│  └─────────────┘     └─────────────────┘     └──────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-- Use Anthropic's Voyage embeddings API (fast, high quality)
-- Store vectors in sqlite-vec locally
-- Falls back gracefully if offline
+### Query Flow
 
-### Option B: Fully Local
+```
+User question
+     │
+     ▼ Tauri command: rag_search
+┌─────────────────────────────────────────────────────────────────┐
+│                     Rust Backend                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐     ┌─────────────────┐     ┌──────────────┐  │
+│  │  Embed      │────▶│  sqlite-vec     │────▶│  Return      │  │
+│  │  question   │     │  KNN search     │     │  top-K       │  │
+│  └─────────────┘     └─────────────────┘     └──────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+     │
+     ▼ (Frontend)
+┌──────────────────────────────────────────────────────────────┐
+│  Claude prompt with context + question                        │
+│  → Response + collapsible "Sources" section                  │
+└──────────────────────────────────────────────────────────────┘
+```
 
-- Ollama with `nomic-embed-text` (384 dims, fast)
-- Requires Ollama running (same as current Claude Code CLI setup)
-- Larger bundle, slower embeddings
+---
 
-## sqlite-vec Setup
+## Rust Implementation Details
+
+### Cargo Dependencies
+
+Add to `src-tauri/Cargo.toml`:
+
+```toml
+[dependencies]
+# ... existing deps ...
+
+# Vector database
+rusqlite = { version = "0.32", features = ["bundled"] }
+sqlite-vec = "0.1"  # Or use zerocopy for manual loading
+
+# HTTP client for embeddings
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+```
+
+### Tauri Commands
+
+```rust
+// src-tauri/src/rag/mod.rs
+
+#[tauri::command]
+async fn rag_init_db(data_path: String) -> Result<(), String>;
+
+#[tauri::command]
+async fn rag_index_chunks(chunks: Vec<ChunkInput>) -> Result<IndexResult, String>;
+
+#[tauri::command]
+async fn rag_delete_doc(doc_path: String) -> Result<(), String>;
+
+#[tauri::command]
+async fn rag_search(
+    query: String,
+    limit: usize,
+    provider: String,  // "ollama" | "voyage"
+    settings: EmbeddingSettings,
+) -> Result<Vec<SearchResult>, String>;
+
+#[tauri::command]
+async fn rag_get_status(data_path: String) -> Result<IndexStatus, String>;
+
+#[tauri::command]
+async fn rag_clear_index(data_path: String) -> Result<(), String>;
+
+#[tauri::command]
+async fn rag_check_ollama(url: String) -> Result<bool, String>;
+```
+
+### Data Structures (Rust)
+
+```rust
+// src-tauri/src/rag/mod.rs
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChunkInput {
+    pub doc_path: String,
+    pub workspace_id: String,
+    pub content_type: String,  // "doc" | "task" | "meeting"
+    pub title: String,
+    pub content: String,
+    pub content_hash: String,  // SHA-256 of original doc for change detection
+    pub chunk_index: u32,
+    pub total_chunks: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub doc_path: String,
+    pub workspace_id: String,
+    pub content_type: String,
+    pub title: String,
+    pub content: String,
+    pub chunk_index: u32,
+    pub score: f32,            // Similarity score (0-1), shown in UI as percentage
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct IndexStatus {
+    pub document_count: u32,
+    pub chunk_count: u32,
+    pub last_indexed_at: Option<String>,
+    pub index_size_bytes: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EmbeddingSettings {
+    pub provider: String,        // "ollama" | "openai" | "voyage"
+    pub ollama_url: String,
+    pub ollama_model: String,
+    pub openai_api_key: Option<String>,
+    pub voyage_api_key: Option<String>,
+}
+```
+
+### SQLite Schema
+
+```sql
+-- Created by rag_init_db
+-- Database location: {dataPath}/.index/vectors.db
+
+-- Index metadata (tracks provider, dimensions, etc.)
+CREATE TABLE IF NOT EXISTS index_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+-- Keys: provider, model, dimensions, last_full_index, version
+
+-- Chunks table with content hash for incremental indexing
+CREATE TABLE IF NOT EXISTS chunks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    doc_path TEXT NOT NULL,
+    workspace_id TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    content_hash TEXT NOT NULL,      -- SHA-256 of original doc, for change detection
+    chunk_index INTEGER NOT NULL,
+    total_chunks INTEGER NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(doc_path, chunk_index)
+);
+
+CREATE INDEX idx_chunks_doc_path ON chunks(doc_path);
+CREATE INDEX idx_chunks_workspace ON chunks(workspace_id);
+CREATE INDEX idx_chunks_hash ON chunks(content_hash);
+
+-- sqlite-vec virtual table for vectors
+-- Dimensions vary by provider: Ollama=384, Voyage=1024, OpenAI=1536
+-- Table is DROPPED and recreated when provider changes (requires re-index)
+CREATE VIRTUAL TABLE IF NOT EXISTS chunk_vectors USING vec0(
+    chunk_id INTEGER PRIMARY KEY,
+    embedding FLOAT[384]  -- dimensions set based on provider at creation time
+);
+```
+
+### Embedding Provider Clients (Rust)
+
+```rust
+// src-tauri/src/rag/embeddings.rs
+
+/// Ollama (local) - 384 dimensions
+pub async fn embed_ollama(
+    text: &str,
+    url: &str,
+    model: &str,
+) -> Result<Vec<f32>, String> {
+    let client = reqwest::Client::new();
+    let response = client
+        .post(format!("{}/api/embeddings", url))
+        .json(&serde_json::json!({
+            "model": model,
+            "prompt": text
+        }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Parse response and return embedding vector
+    // ...
+}
+
+/// OpenAI (cloud) - 1536 dimensions
+pub async fn embed_openai(
+    text: &str,
+    api_key: &str,
+) -> Result<Vec<f32>, String> {
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://api.openai.com/v1/embeddings")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({
+            "model": "text-embedding-3-small",
+            "input": text
+        }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Parse response and return embedding vector
+    // ...
+}
+
+/// Voyage (cloud) - 1024 dimensions
+pub async fn embed_voyage(
+    text: &str,
+    api_key: &str,
+) -> Result<Vec<f32>, String> {
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://api.voyageai.com/v1/embeddings")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({
+            "model": "voyage-3.5-lite",
+            "input": text
+        }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Parse response and return embedding vector
+    // ...
+}
+```
+
+---
+
+## When to Index
+
+| Trigger | Behavior |
+|---------|----------|
+| **On doc save** | Re-index that single doc (~100ms) |
+| **On app start** | Check for stale/missing vectors, index incrementally |
+| **Manual button** | "Re-index All" for full rebuild |
+| **File watcher** | Background indexing when files change externally |
+
+---
+
+## Storage
+
+```
+{dataPath}/.index/              # dataPath from user settings (e.g. ~/Desk, ~/MyData)
+└── vectors.db                  # sqlite-vec database
+    ├── index_meta              # provider, model, dimensions, version
+    ├── chunks                  # doc_path, content, content_hash, workspace_id
+    └── chunk_vectors           # embedding vectors (dims based on provider)
+```
+
+---
+
+## AI Exclusion System
+
+### Default Behavior
+- **Everything included** by default
+- Users explicitly exclude sensitive content
+
+### Exclusion Methods
+
+#### 1. Frontmatter field (individual files)
+```yaml
+---
+title: Secret Notes
+ai: false
+---
+```
+
+#### 2. `.aiignore` file (folders)
+Place in any folder to exclude contents:
+
+```
+# .aiignore - exclude everything
+*
+```
+
+Or selective:
+```
+# .aiignore - exclude specific items
+passwords.md
+secrets/
+*.private.md
+```
+
+### UI for Managing AI Inclusion
+
+#### In Content Tree (docs list)
+```
+📁 projects/
+  📁 secret-stuff/        🚫    ← folder excluded (has .aiignore)
+    📄 passwords.md       🚫    ← inherited (dimmed)
+  📄 api-docs.md          🧠    ← included (default)
+  📄 internal-notes.md    🚫    ← manually excluded (ai: false)
+```
+
+**Interactions:**
+- Small brain icon (🧠) on items = included in AI
+- Crossed-out/dimmed = excluded
+- Click icon to toggle
+- Right-click folder → "Exclude folder from AI" (creates `.aiignore`)
+- Right-click doc → "Exclude from AI" / "Include in AI"
+
+#### In Doc Editor Header
+```
+┌─────────────────────────────────────────────────┐
+│ 📄 API Documentation            [🧠] [⋮]        │
+│ ─────────────────────────────────────────────── │
+```
+Toggle button in header to control AI inclusion.
+
+---
+
+## Chunking Strategy
+
+**Hybrid approach** based on your data (avg 1.4 KB files):
+
+| File Size | Has Headers? | Strategy |
+|-----------|--------------|----------|
+| < 2 KB | Any | Single chunk |
+| >= 2 KB | Yes (##) | Split by headers |
+| >= 2 KB | No | Fixed size (~500 tokens) with overlap |
+
+Always include:
+- Frontmatter in each chunk (for context)
+- File path and title
+- Chunk index for ordering
+
+---
+
+## Settings Page Restructure
+
+### New Tab Structure
+
+```
+┌─────────────────────────────────────────────────┐
+│  Settings                                        │
+├────────┬────────┬────────┬──────────────────────┤
+│ General│   AI   │  RAG   │       Data           │
+└────────┴────────┴────────┴──────────────────────┘
+```
+
+| Tab | Contents |
+|-----|----------|
+| **General** | Theme, Sidebar, Reset |
+| **AI** | Provider (Claude Code/API), API key, Usage stats |
+| **RAG** | Embedding provider, Index status, Re-index button |
+| **Data** | Data path, Workspaces list |
+
+### RAG Tab
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Document Search (RAG)                                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Embedding Provider           [Auto ▾]                       │
+│  ├─ Auto (Ollama → OpenAI/Voyage fallback)                  │
+│  ├─ Ollama (local, free)                                    │
+│  ├─ OpenAI (cloud, $0.02/1M tokens)                         │
+│  └─ Voyage (cloud, $0.02/1M tokens)                         │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│                                                              │
+│  [If Ollama]                                                 │
+│  Ollama URL              [http://localhost:11434]            │
+│  Model                   [nomic-embed-text ▾]                │
+│                          [Test Connection]  ✓ Connected      │
+│                                                              │
+│  [If OpenAI]                                                 │
+│  OpenAI API Key          [sk-... 👁]                         │
+│                                                              │
+│  [If Voyage]                                                 │
+│  Voyage API Key          [pa-... 👁]                         │
+│                                                              │
+│  ⚠️ Changing provider requires re-indexing all documents     │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│                                                              │
+│  Index Status                                                │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  📄 387 documents indexed                            │    │
+│  │  🧩 412 chunks (avg 1.1 per doc)                     │    │
+│  │  🕐 Last indexed: 2 hours ago                        │    │
+│  │  📁 Index size: 2.4 MB                               │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  [Re-index All]  [Clear Index]                               │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│                                                              │
+│  Retrieval                                                   │
+│  Results per query         [5 ▾]  (3, 5, 10)                │
+│                                                              │
+│  ☑ Auto-index on save                                        │
+│  ☑ Show sources in AI responses                              │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Data Models (Frontend)
+
+### RAG Settings Store (Zustand)
 
 ```typescript
-// Install: npm install sqlite-vec better-sqlite3
-import Database from "better-sqlite3";
-import * as sqliteVec from "sqlite-vec";
+// src/stores/rag.ts
 
-const db = new Database("~/Desk/.index/vectors.db");
-sqliteVec.load(db);
+interface RAGSettings {
+  // Provider (user's choice)
+  embeddingProvider: 'auto' | 'ollama' | 'openai' | 'voyage';
 
-db.exec(`
-  CREATE VIRTUAL TABLE IF NOT EXISTS doc_chunks USING vec0(
-    embedding float[384]  -- or 1024 for voyage
-  );
+  // Ollama (local)
+  ollamaUrl: string;           // default: http://localhost:11434
+  ollamaModel: string;         // default: nomic-embed-text
 
-  CREATE TABLE IF NOT EXISTS chunks (
-    id INTEGER PRIMARY KEY,
-    doc_path TEXT,
-    content TEXT,
-    chunk_index INTEGER
-  );
-`);
+  // OpenAI (cloud)
+  openaiApiKey: string;
+
+  // Voyage (cloud)
+  voyageApiKey: string;
+
+  // Retrieval
+  retrievalCount: number;      // default: 5
+
+  // Behavior
+  autoIndexOnSave: boolean;    // default: true
+  showSourcesInChat: boolean;  // default: true
+}
 ```
+
+### Index Status
+
+```typescript
+interface IndexStatus {
+  documentCount: number;
+  chunkCount: number;
+  lastIndexedAt: Date | null;
+  indexSizeBytes: number;
+  isIndexing: boolean;
+  excludedCount: number;
+  // Provider tracking (for mismatch detection)
+  indexedWithProvider: 'ollama' | 'openai' | 'voyage' | null;
+  indexedWithModel: string | null;
+  dimensions: number | null;
+}
+```
+
+### Chunk (Frontend)
+
+```typescript
+interface Chunk {
+  docPath: string;
+  workspaceId: string;
+  contentType: 'doc' | 'task' | 'meeting';
+  title: string;
+  content: string;
+  contentHash: string;        // SHA-256 for change detection
+  chunkIndex: number;
+  totalChunks: number;
+}
+
+interface SearchResult {
+  docPath: string;
+  workspaceId: string;
+  contentType: 'doc' | 'task' | 'meeting';
+  title: string;
+  content: string;
+  chunkIndex: number;
+  score: number;              // 0-1, displayed as "94% match" in UI
+}
+```
+
+---
 
 ## Implementation Phases
 
-1. **Phase 1**: sqlite-vec integration + manual "Add to AI context" button
-2. **Phase 2**: Auto-index flagged docs on save
-3. **Phase 3**: Smart chunking (respect markdown structure)
-4. **Phase 4**: Background indexing on file watcher events
+### Phase 1: Settings & Infrastructure
+- [x] Restructure settings page with tabs (General, AI, RAG, Data)
+- [x] Create RAG settings tab UI (provider selection, credentials)
+- [x] Create RAG settings Zustand store
+- [x] Add Ollama connection test (via fetch, will use Tauri command later)
+- [x] Add OpenAI and Voyage API key inputs
 
-## Open Questions
+### Phase 2: Rust Vector Database
+- [ ] Add Rust dependencies (rusqlite, sqlite-vec, reqwest, tokio)
+- [ ] Create `src-tauri/src/rag/` module structure
+- [ ] Implement `rag_init_db` command (create tables)
+- [ ] Implement `rag_get_status` command
+- [ ] Implement `rag_clear_index` command
+- [ ] Register commands in `lib.rs`
 
-1. **Embedding source**: Cloud (Voyage) or local-only (Ollama)?
-2. **Scope**: Just flagged docs, or all docs by default?
-3. **UI**: How to flag docs? Frontmatter field? Toggle in editor?
+### Phase 3: Embedding Providers (Rust)
+- [ ] Implement Ollama HTTP client (`embed_ollama`) - 384 dims
+- [ ] Implement OpenAI HTTP client (`embed_openai`) - 1536 dims
+- [ ] Implement Voyage HTTP client (`embed_voyage`) - 1024 dims
+- [ ] Implement `rag_check_ollama` command
+- [ ] Add provider selection logic
+- [ ] Handle re-index warning when provider changes
 
-## Notes
+### Phase 4: Indexing Pipeline
+- [ ] Implement `rag_index_chunks` command (embed + store)
+- [ ] Implement `rag_delete_doc` command
+- [ ] Create frontend chunker (`src/lib/rag/chunker.ts`)
+- [ ] Create `.aiignore` parser (`src/lib/rag/aiignore.ts`)
+- [ ] Parse frontmatter for `ai: false`
+- [ ] Hook into doc save (auto-index)
+- [ ] Add "Re-index All" functionality
 
-- sqlite-vec is a SQLite extension - no separate process needed
-- `nomic-embed-text` is small (274MB) and fast
-- Could start with simple keyword search, add embeddings later
-- hab gehört sqlite könnte gut sein sqlite vec oder sowas. dan irgendne kleineeres ollama embedding model oder so.
+### Phase 5: Search & AI Integration
+- [ ] Implement `rag_search` command (embed query + KNN)
+- [ ] Create search API in frontend (`src/lib/rag/search.ts`)
+- [ ] Integrate into AI chat (query before sending to Claude)
+- [ ] Add context to Claude prompt
+- [ ] Show collapsible "Sources" in AI responses
+
+### Phase 6: UI Polish
+- [ ] Add AI inclusion icon (🧠) to content tree items
+- [ ] Add toggle in doc editor header
+- [ ] Add right-click context menu: "Exclude from AI"
+- [ ] Add folder context menu: "Exclude folder from AI"
+- [ ] Show excluded state (dimmed/crossed)
+
+### Phase 7: Extended File Support
+- [ ] Add mammoth for Word (.docx) extraction
+- [ ] Add pdf-parse for PDF extraction
+- [ ] Add plain text (.txt) support
+- [ ] Update chunker to handle different file types
+
+---
+
+## File Locations
+
+### Frontend (TypeScript)
+
+```
+src/lib/rag/
+├── index.ts              # Main RAG API (calls Tauri commands)
+├── chunker.ts            # Markdown-aware chunking
+├── aiignore.ts           # .aiignore file parsing
+└── types.ts              # TypeScript interfaces
+
+src/stores/rag.ts         # RAG settings Zustand store
+
+src/components/settings/
+├── settings-tabs.tsx     # Tab container
+├── general-tab.tsx       # Theme, sidebar, reset
+├── ai-tab.tsx            # Claude provider, API key, usage
+├── rag-tab.tsx           # Embedding provider, index status
+└── data-tab.tsx          # Data path, workspaces
+```
+
+### Backend (Rust)
+
+```
+src-tauri/src/
+├── lib.rs                # Add rag commands to invoke_handler
+├── rag/
+│   ├── mod.rs            # Module exports + Tauri commands
+│   ├── db.rs             # sqlite-vec operations
+│   ├── embeddings.rs     # Ollama + Voyage HTTP clients
+│   └── search.rs         # Vector similarity search
+```
+
+---
+
+## Technical Notes
+
+- sqlite-vec uses `vec0` virtual table for vector storage
+- Vector dimensions vary by provider:
+  - Ollama (nomic-embed-text): 384 dims
+  - Voyage (voyage-3.5-lite): 1024 dims
+  - OpenAI (text-embedding-3-small): 1536 dims
+- **Switching providers requires full re-index** (can't mix vectors from different models)
+- `.aiignore` follows `.gitignore` syntax (minimatch patterns)
+- API keys are separate: OpenAI key ≠ Voyage key ≠ Anthropic key
+- Ollama requires model pulled first: `ollama pull nomic-embed-text`
+- Store current provider in index metadata to detect provider changes
