@@ -1,6 +1,6 @@
 # Task: RAG Integration and better AI Context Handling
 
-> Status: **Ready for Implementation**
+> Status: **Phase 5 Complete** - Core RAG integration working. Phase 6-7 pending (UI polish, extended file types).
 
 ## Goal
 
@@ -614,14 +614,14 @@ interface SearchResult {
 - [x] Parse frontmatter for `ai: false`
 - [x] Create RAG API wrapper (`src/lib/rag/index.ts`)
 - [x] Wire up RAG tab buttons to Tauri commands
-- [ ] Hook into doc save (auto-index)
-- [ ] Add "Re-index All" functionality (collect all docs)
+- [x] Hook into doc save (auto-index) - `use-rag-indexer.ts` + editor callbacks
+- [x] Add "Re-index All" functionality - `src/lib/rag/reindex.ts`
 
 ### Phase 5: AI Chat Integration
 - [x] Create search API in frontend
-- [ ] Integrate into AI chat (query before sending to Claude)
-- [ ] Add context to Claude prompt
-- [ ] Show collapsible "Sources" in AI responses
+- [x] Integrate into AI chat (query before sending to Claude) - `src/stores/ai.ts:211-216`
+- [x] Add context to Claude prompt - `src/lib/ai/prompts.ts:78-82`
+- [x] Show collapsible "Sources" in AI responses - `src/components/ai/chat-message.tsx:49-64`
 
 ### Phase 6: UI Polish
 - [ ] Add AI inclusion icon (🧠) to content tree items
