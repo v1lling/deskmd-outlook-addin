@@ -34,47 +34,58 @@
 
 ## Data Hierarchy
 
-The application has a clear three-level hierarchy:
+All content lives in workspaces, including Personal:
 
 ```
-Personal Space (not workspace-scoped)
-├── Capture (quick capture, triage from here)
-├── Tasks
-└── Docs
-
-Workspace (Client/Context)
+Workspace (Client or Personal)
 ├── Workspace-level Docs (shared across all projects)
+├── _unassigned/              (items not assigned to a project)
+├── _capture/                 (Personal only - triage inbox)
 └── Projects
     └── Project
         ├── Tasks
         ├── Docs
         └── Meetings
+
+Personal = workspace "_personal" (always first in list)
 ```
+
+**"Work Mode" Navigation**: User selects active workspace via bottom selector. Tasks, Docs, Meetings views filter to that workspace automatically.
 
 ### Scopes Explained
 
 | Scope | Description | Location |
 |-------|-------------|----------|
-| **Personal** | Private items not tied to any client/workspace | `personal/` |
+| **Personal** | Private workspace (treated like any other) | `workspaces/_personal/` |
 | **Workspace** | Shared docs for the whole workspace | `workspaces/{id}/docs/` |
 | **Project** | Items belonging to a specific project | `workspaces/{id}/projects/{id}/` |
 | **Unassigned** | Workspace items not yet assigned to a project | `workspaces/{id}/_unassigned/` |
+| **Capture** | Quick triage inbox (Personal workspace only) | `workspaces/_personal/_capture/` |
 
 ## File Structure
 
 ```
 ~/Desk/
 ├── config.json                     # App settings (theme, current workspace)
-├── personal/                       # Personal space (PERSONAL_SPACE_ID)
-│   ├── capture/
-│   │   └── tasks/*.md              # Quick capture items
-│   ├── tasks/*.md                  # Personal tasks
-│   └── docs/                       # Personal docs (tree structure)
-│       ├── folder/
-│       │   └── doc.md
-│       └── doc.md
 ├── workspaces/
-│   └── {workspace-id}/
+│   ├── _personal/                  # Personal workspace (always first in list)
+│   │   ├── workspace.md            # Personal workspace metadata
+│   │   ├── .view.json              # UI state
+│   │   ├── _capture/               # Triage inbox (Personal only)
+│   │   │   └── tasks/*.md          # Quick capture items to triage
+│   │   ├── _unassigned/            # Personal items without a project
+│   │   │   ├── tasks/*.md
+│   │   │   └── docs/*.md
+│   │   ├── docs/                   # Personal docs (tree structure)
+│   │   │   ├── folder/
+│   │   │   └── doc.md
+│   │   └── projects/               # Personal projects
+│   │       └── {project-id}/
+│   │           ├── project.md
+│   │           ├── tasks/*.md
+│   │           ├── docs/
+│   │           └── meetings/*.md
+│   └── {workspace-id}/             # Client workspaces
 │       ├── workspace.md            # Workspace metadata
 │       ├── .view.json              # UI state (All Tasks ordering)
 │       ├── docs/                   # Workspace-level docs (tree structure)
@@ -101,16 +112,16 @@ All paths are centralized in `src/lib/desk/constants.ts`:
 ```typescript
 export const PATH_SEGMENTS = {
   WORKSPACES: "workspaces",
-  PERSONAL: "personal",
   PROJECTS: "projects",
   TASKS: "tasks",
   DOCS: "docs",
   MEETINGS: "meetings",
-  CAPTURE: "capture",
 } as const;
 
 export const SPECIAL_DIRS = {
   UNASSIGNED: "_unassigned",
+  PERSONAL: "_personal",
+  CAPTURE: "_capture",
 } as const;
 
 export const FILE_NAMES = {
@@ -119,7 +130,11 @@ export const FILE_NAMES = {
   VIEW_STATE: ".view.json",
 } as const;
 
-export const PERSONAL_SPACE_ID = "__personal__" as const;
+export const PERSONAL_WORKSPACE_ID = "_personal" as const;
+
+// Helper functions
+export function isPersonalWorkspace(workspaceId: string | null): boolean;
+export function isCapture(projectId: string): boolean;
 ```
 
 **All library files MUST use these constants** - never hardcode path strings.
@@ -181,7 +196,7 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 | `tasks.ts` | Task CRUD operations |
 | `content.ts` | Doc/Asset CRUD + content tree operations (folders, import) |
 | `meetings.ts` | Meeting CRUD operations |
-| `personal.ts` | Personal space CRUD (capture, tasks, docs) |
+| `personal.ts` | Capture inbox CRUD (triage to Personal or workspaces) |
 | `dashboard.ts` | Cross-workspace data aggregation |
 | `search.ts` | Cross-workspace search helpers |
 | `search-index.ts` | In-memory Fuse.js search index |
@@ -261,7 +276,7 @@ interface Asset {
 
 | Scope | Route | Data Path |
 |-------|-------|-----------|
-| Personal | `/personal/docs` | `personal/docs/` |
+| Personal | `/docs` (with Personal workspace selected) | `workspaces/_personal/docs/` |
 | Workspace | `/docs` (Workspace tab) | `workspaces/{id}/docs/` |
 | All Projects | `/docs` (All tab) | Aggregate view |
 | Project | `/projects/view?id=xxx` | `workspaces/{id}/projects/{id}/docs/` |

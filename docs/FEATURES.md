@@ -7,27 +7,29 @@
 - **Focus widget**: Shows all in-progress tasks across workspaces
 - **Workspaces widget**: Overview of all workspaces with completion progress
 
-### Personal Space
-- Tasks and docs not tied to any workspace
-- Capture widget on Dashboard for quick capture (triage to Personal or Workspace)
-- Separate from workspace-scoped content
+### Personal Workspace
+- Personal is a workspace (`_personal`) - first option in Work Mode selector
+- Can have projects, tasks, docs like any other workspace
+- **Capture inbox** (`_capture`): Quick triage to Personal or other workspaces
+- Indigo color distinguishes from client workspaces
 
-### Workspaces
-- Color-coded for visual distinction
-- Inline in sidebar with expandable sub-navigation
+### Workspaces ("Work Mode" Navigation)
+- **Workspace selector** at bottom of sidebar for explicit context switching
+- Color-coded for visual distinction (color dot in selector and page headers)
 - Complete isolation between workspaces
 - Workspace-level docs (shared across all projects)
 - Create/edit/delete workspaces
 
 ### Projects
-- Listed inline in sidebar under each workspace (alphabetically sorted)
-- Tabbed detail page: Overview, Tasks, Docs, Meetings
+- **Listed directly in sidebar** for current workspace (alphabetically sorted)
+- Scrollable list with max-height for workspaces with many projects
+- Tabbed detail page: Tasks (default), Overview, Docs, Meetings
 - Status badges (active/paused/completed/archived)
-- Task counts and progress indicators
-- Quick actions from overview tab
-- New Project button in sidebar
+- Task counts in sidebar and progress indicators
+- New Project button in projects section
 
 ### Tasks
+- **Page header** with workspace color dot and name badge
 - 4-column Kanban: Todo, Doing, Waiting, Done
 - Drag-drop between columns
 - Quick add modal (title, project, priority, due date)
@@ -36,8 +38,10 @@
 - Due dates
 - Project reassignment from detail panel
 - Filter by project or show all/unassigned
+- Active task count in sidebar
 
 ### Docs
+- **Page header** with workspace color dot and name badge
 - **Tree structure**: Folders with unlimited nesting
 - **Multiple scopes**: Personal, Workspace-level, Project-level
 - WYSIWYG markdown editor (Tiptap)
@@ -45,12 +49,16 @@
 - Folder operations: create, rename, delete
 - Project reassignment (for project docs)
 - Filter by project or show unassigned
-- Tabbed view: Workspace docs vs All Projects
+- Doc count in sidebar
 
 ### Meetings
-- List view by project
+- **Page header** with workspace color dot and name badge
+- **Aggregates meetings** from all projects in workspace (+ unassigned)
+- Grouped view by project when showing all
+- Filter by project
 - Markdown editor for notes
 - Date tracking
+- Meeting count in sidebar
 
 ### Unassigned Items
 - Tasks and docs can exist without a project
@@ -112,21 +120,16 @@
 - *Coming soon*: Project context for AI drafts, Extract Tasks from emails
 
 ### UI/UX
+- **"Work Mode" navigation**: Explicit workspace context with selector at bottom
+- **Global views**: Tasks/Docs/Meetings at top of sidebar, filtered by active workspace
+- **Page headers**: Workspace color dot + name badge on all workspace-scoped pages
+- **Personal in Work Mode**: Personal is first option in workspace selector (indigo color)
 - **Custom scrollbars**: OverlayScrollbars for consistent cross-platform styling (Chrome + Tauri/WKWebView)
 - List/Kanban view toggle for tasks
-- Collapsible sidebar sections
 
 ---
 
 ## Planned
-
-### Navigation & UX Restructure
-- See [UX-AUDIT.md](UX-AUDIT.md) for full analysis
-- Consider project-first navigation (vs current workspace-first)
-- Add dedicated `/projects` page
-- Add recent projects widget to Dashboard
-- Simplify workspace-level vs project-level content distinction
-- Make workspace context more explicit on pages
 
 ### Testing Infrastructure
 - Unit tests for `lib/desk/` (calculations, parser, search)

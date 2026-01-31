@@ -5,20 +5,20 @@
 ## Current Mental Model
 
 ```
-Personal Space
-├── Tasks
-├── Docs
-
-Workspace (e.g., "Client A")
-├── All Tasks      ← Aggregates project tasks
-├── Docs           ← Workspace-level only
-├── Meetings       ← Workspace-level only
+Workspace (including Personal as "_personal")
+├── Tasks           ← Aggregates project tasks + unassigned
+├── Docs            ← Workspace-level docs
+├── Meetings        ← Aggregates project meetings
+├── _capture/       ← Triage inbox (Personal workspace only)
+├── _unassigned/    ← Items not yet assigned to a project
 └── Projects
     └── Project X
         ├── Tasks
         ├── Docs
         └── Meetings
 ```
+
+**Key insight**: Personal is now a workspace (`_personal`) with the same structure as client workspaces. It can have projects, and includes a special `_capture` area for quick triage.
 
 ---
 
@@ -153,21 +153,18 @@ The original proposal to flip to project-first navigation assumes all freelancer
 │  • Data Migration         (34)   │
 │  • Documentation           (3)   │
 │  • Mobile App             (18)   │
-│  ─────────────────────────────── │
-│                                  │
-│  ▸ PERSONAL                      │  ← Collapsible, always accessible
-│    Tasks                         │
-│    Docs                          │
 │                                  │
 ├──────────────────────────────────┤
 │  ⚙️ Settings                     │
 ├──────────────────────────────────┤
 │  ┌────────────────────────────┐  │
-│  │ ● SLSP                  ▼ │  │  ← Workspace selector
+│  │ ● SLSP                  ▼ │  │  ← Workspace selector (includes Personal)
 │  └────────────────────────────┘  │
 │  Work Mode                       │
 └──────────────────────────────────┘
 ```
+
+**Note**: Personal is now a workspace option in the selector dropdown (always first), not a separate sidebar section.
 
 ### Key Changes
 
@@ -210,7 +207,7 @@ Work Mode
    - Tasks/Docs/Meetings views filter automatically
    - Projects list updates to show that workspace's projects
 3. **Visual**: Workspace color dot always visible
-4. **Personal space** remains separate section (not a "workspace")
+4. **Personal** is a workspace (`_personal`) - first option in dropdown with indigo color
 
 ### State Management
 
@@ -236,11 +233,11 @@ All workspace-filtered pages show the active workspace:
 
 ---
 
-## Three Doc Scopes (Preserved)
+## Doc Scopes (Unified)
 
 | Scope | Access Point | Use Case |
 |-------|--------------|----------|
-| Personal | Sidebar → Personal → Docs | Private notes, research, planning |
+| Personal | Select Personal workspace → Docs | Private notes, research, planning |
 | Workspace | Global Docs → "Workspace" scope | Contracts, client templates, shared refs |
 | Project | Project detail → Docs tab | Project-specific documentation |
 
@@ -248,6 +245,8 @@ The Docs page keeps its scope dropdown:
 - `{Workspace Name} (Workspace)` - workspace-level docs
 - Individual project names - project-level docs
 - "All" - combined view
+
+**Note**: Personal docs are now accessed by selecting the Personal workspace in the Work Mode selector, then viewing Docs. Same pattern as any other workspace.
 
 ---
 
@@ -263,30 +262,37 @@ For workspaces with many projects (SLSP has 20):
 
 ## Implementation Phases
 
-### Phase 1: Sidebar Restructure
+### Phase 1: Sidebar Restructure ✅
 - Create `WorkspaceSelector` component at bottom
 - Move Tasks/Docs/Meetings to top as "Global Views"
 - List projects directly (remove workspace nesting)
-- Keep Personal as separate section
 
 **Files**: `src/components/layout/sidebar.tsx`, new `workspace-selector.tsx`
 
-### Phase 2: Explicit Context Headers
+### Phase 2: Explicit Context Headers ✅
 - Add workspace badge to Tasks, Docs, Meetings pages
 - Use workspace color for visual consistency
 
 **Files**: `src/app/tasks/page.tsx`, `src/app/docs/client.tsx`, `src/app/meetings/page.tsx`
 
-### Phase 3: Meetings Aggregation
+### Phase 3: Meetings Aggregation ✅
 - Update Meetings to aggregate workspace + project meetings
 - Match how Tasks already works
 
 **Files**: `src/stores/meetings.ts`, `src/lib/desk/meetings.ts`, `src/app/meetings/page.tsx`
 
-### Phase 4: Polish
+### Phase 4: Polish ✅
 - Default project detail to Tasks tab (most common use)
 - Rename any remaining "All Tasks" labels
 - Add task/doc counts to sidebar items
+
+### Phase 5: Personal as Workspace ✅
+- Treat Personal as a workspace (`_personal`) not separate entity
+- Personal can have projects like other workspaces
+- Capture remains as special triage inbox (`_capture`)
+- Removed dedicated `/personal/` routes
+
+**Files**: `src/lib/desk/workspaces.ts`, `src/lib/desk/personal.ts`, `src/stores/personal.ts`
 
 ---
 
@@ -308,31 +314,82 @@ This approach is better than the original options because:
 
 - [x] Analyze real-world usage patterns
 - [x] Design "Work Mode" navigation structure
-- [ ] Implement Phase 1: Sidebar restructure
-- [ ] Implement Phase 2: Explicit context headers
-- [ ] Implement Phase 3: Meetings aggregation
-- [ ] Implement Phase 4: Polish
-- [ ] Test with actual workflow
+- [x] Implement Phase 1: Sidebar restructure
+- [x] Implement Phase 2: Explicit context headers
+- [x] Implement Phase 3: Meetings aggregation
+- [x] Implement Phase 4: Polish
+- [x] Implement Phase 5: Personal as workspace
+- [x] Update documentation (CLAUDE.md, ARCHITECTURE.md, FEATURES.md)
+- [x] Update code comments for consistency
+- [x] Migrate files: `~/DeskMD/personal/` → `~/DeskMD/workspaces/_personal/`
+- [x] Test with actual workflow
 
 ---
 
 ## Technical Notes
 
-### Files to Modify
+### Files Modified
 
 | File | Changes |
 |------|---------|
-| `src/components/layout/sidebar.tsx` | Major restructure - remove workspace nesting, add global views |
-| `src/components/layout/workspace-selector.tsx` | New component for bottom selector |
-| `src/app/tasks/page.tsx` | Add workspace context header |
-| `src/app/docs/client.tsx` | Add workspace context header |
-| `src/app/meetings/page.tsx` | Add workspace context header, aggregate meetings |
-| `src/stores/meetings.ts` | Add workspace-level meetings query |
+| `src/components/layout/sidebar.tsx` | Major restructure - global views at top, projects list, workspace selector at bottom |
+| `src/components/layout/workspace-selector.tsx` | New component for bottom "Work Mode" selector (includes Personal) |
+| `src/components/layout/projects-list.tsx` | New component for current workspace's projects |
+| `src/components/patterns/filtered-list-page.tsx` | Added workspace context header support |
+| `src/components/patterns/page-header.tsx` | New reusable header with workspace badge |
+| `src/app/tasks/page.tsx` | Uses FilteredListPage with workspace context |
+| `src/app/docs/client.tsx` | Added workspace context header |
+| `src/app/meetings/page.tsx` | Added workspace context header |
+| `src/app/projects/view/client.tsx` | Default tab changed to "tasks" |
+| `src/stores/meetings.ts` | Added `useMeetings()` for workspace-level aggregation |
+| `src/lib/desk/meetings.ts` | Added `getMeetings()`, fixed unassigned meetings bug |
+| `src/lib/desk/paths.ts` | New centralized path builders (DRY) |
+| `src/lib/desk/workspaces.ts` | Added `PERSONAL_WORKSPACE` constant, Personal returned first in `getWorkspaces()` |
+| `src/lib/desk/personal.ts` | Simplified to capture-only (triage inbox) |
+| `src/stores/personal.ts` | Rewritten for capture-only: `captureKeys`, `useCaptureTasks()`, etc. |
+| `src/stores/content.ts` | Fixed over-invalidation (now workspace-scoped) |
+| `src/lib/desk/constants.ts` | Added `PERSONAL_WORKSPACE_ID`, `WORKSPACE_LEVEL_PROJECT_ID`, `isPersonalWorkspace()`, `isCapture()` |
+| `src/lib/desk/content.ts` | Fixed `getContentBasePath` to use correct Personal path, uses constants |
+| `src/lib/desk/view-state.ts` | Fixed Personal view state path, uses constants |
+| `src/stores/view-state.ts` | Uses `WORKSPACE_LEVEL_PROJECT_ID` constant |
+| `src/app/page.tsx` | Fixed FocusWidget and WorkspacesWidget to use workspace context switching |
+| `src/components/tabs/tab-bar.tsx` | Removed dead code for old `/personal/` routes |
+| `src/app/docs/client.tsx` | Uses `WORKSPACE_LEVEL_PROJECT_ID` constant |
+
+### Bugs Fixed During Implementation
+
+1. **Meetings didn't support unassigned** - `_unassigned` directory was explicitly excluded
+2. **Content keys over-invalidated** - Used `contentKeys.all` instead of workspace-scoped
+3. **Personal store hardcoded query key** - Used `["tasks", workspaceId]` instead of `taskKeys`
+4. **Duplicated path construction** - 7+ instances of same path patterns across files
+5. **Personal docs used old path** - `getContentBasePath` used `~/Desk/personal/` instead of `~/Desk/workspaces/_personal/`
+6. **Personal view state used old path** - Same issue in `view-state.ts`
+7. **Dashboard used wrong Personal ID** - Compared against `"__personal__"` instead of `"_personal"`
+8. **Dashboard routed to deleted routes** - Referenced `/personal/tasks` which no longer exists
+9. **Deprecated constant cleanup** - Removed `PERSONAL_SPACE_ID`, added `WORKSPACE_LEVEL_PROJECT_ID`
+
+### Architecture Change: Personal as Workspace
+
+Personal space is now a workspace (`_personal`) rather than a separate entity:
+
+- **Before**: `~/Desk/personal/` with separate CRUD functions
+- **After**: `~/Desk/workspaces/_personal/` using standard workspace stores
+
+Benefits:
+- Personal can have projects (same as client workspaces)
+- Same task/doc/meeting stores work for Personal
+- Simplified codebase - no dual-path logic
+- Capture (`_capture`) remains as special triage inbox within Personal
+
+### Removed
+
+- `/src/app/personal/` routes (Personal accessed via WorkspaceSelector)
+- `usePersonalTasks`, `useCreatePersonalTask`, etc. (use standard task hooks)
+- `personalKeys` (renamed to `captureKeys` for capture-only)
 
 ### No Changes Needed
 
 - Route structure (`/tasks`, `/docs`, `/meetings`, `/projects/view`)
-- File system structure (`~/Desk/workspaces/{id}/...`)
 - Data models (Task, Doc, Meeting types)
 - `ContentScope` type or scoping logic
 - Settings store (already has `currentWorkspaceId`)
