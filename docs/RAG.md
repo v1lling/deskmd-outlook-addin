@@ -609,15 +609,16 @@ interface SearchResult {
 - [x] Implement `rag_search` command (embed query + KNN)
 
 ### Phase 4: Frontend Indexing Pipeline
-- [ ] Create frontend chunker (`src/lib/rag/chunker.ts`)
-- [ ] Create `.aiignore` parser (`src/lib/rag/aiignore.ts`)
-- [ ] Parse frontmatter for `ai: false`
+- [x] Create frontend chunker (`src/lib/rag/chunker.ts`)
+- [x] Create `.aiignore` parser (`src/lib/rag/aiignore.ts`)
+- [x] Parse frontmatter for `ai: false`
+- [x] Create RAG API wrapper (`src/lib/rag/index.ts`)
+- [x] Wire up RAG tab buttons to Tauri commands
 - [ ] Hook into doc save (auto-index)
-- [ ] Add "Re-index All" functionality
-- [ ] Wire up RAG tab buttons to Tauri commands
+- [ ] Add "Re-index All" functionality (collect all docs)
 
 ### Phase 5: AI Chat Integration
-- [ ] Create search API in frontend (`src/lib/rag/index.ts`)
+- [x] Create search API in frontend
 - [ ] Integrate into AI chat (query before sending to Claude)
 - [ ] Add context to Claude prompt
 - [ ] Show collapsible "Sources" in AI responses
