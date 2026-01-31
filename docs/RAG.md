@@ -591,24 +591,24 @@ interface SearchResult {
 - [x] Add OpenAI and Voyage API key inputs
 
 ### Phase 2: Rust Vector Database
-- [ ] Add Rust dependencies (rusqlite, sqlite-vec, reqwest, tokio)
-- [ ] Create `src-tauri/src/rag/` module structure
-- [ ] Implement `rag_init_db` command (create tables)
-- [ ] Implement `rag_get_status` command
-- [ ] Implement `rag_clear_index` command
-- [ ] Register commands in `lib.rs`
+- [x] Add Rust dependencies (rusqlite, sqlite-vec, reqwest, tokio, sha2)
+- [x] Create `src-tauri/src/rag/` module structure
+- [x] Implement `rag_init_db` command (create tables)
+- [x] Implement `rag_get_status` command
+- [x] Implement `rag_clear_index` command
+- [x] Implement `rag_delete_doc` command
+- [x] Implement `rag_check_ollama` command
+- [x] Register commands in `lib.rs`
 
 ### Phase 3: Embedding Providers (Rust)
 - [ ] Implement Ollama HTTP client (`embed_ollama`) - 384 dims
 - [ ] Implement OpenAI HTTP client (`embed_openai`) - 1536 dims
 - [ ] Implement Voyage HTTP client (`embed_voyage`) - 1024 dims
-- [ ] Implement `rag_check_ollama` command
 - [ ] Add provider selection logic
 - [ ] Handle re-index warning when provider changes
 
 ### Phase 4: Indexing Pipeline
 - [ ] Implement `rag_index_chunks` command (embed + store)
-- [ ] Implement `rag_delete_doc` command
 - [ ] Create frontend chunker (`src/lib/rag/chunker.ts`)
 - [ ] Create `.aiignore` parser (`src/lib/rag/aiignore.ts`)
 - [ ] Parse frontmatter for `ai: false`
