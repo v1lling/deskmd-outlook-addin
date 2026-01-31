@@ -601,23 +601,23 @@ interface SearchResult {
 - [x] Register commands in `lib.rs`
 
 ### Phase 3: Embedding Providers (Rust)
-- [ ] Implement Ollama HTTP client (`embed_ollama`) - 384 dims
-- [ ] Implement OpenAI HTTP client (`embed_openai`) - 1536 dims
-- [ ] Implement Voyage HTTP client (`embed_voyage`) - 1024 dims
-- [ ] Add provider selection logic
-- [ ] Handle re-index warning when provider changes
+- [x] Implement Ollama HTTP client (`embed_ollama`) - 384 dims
+- [x] Implement OpenAI HTTP client (`embed_openai`) - 1536 dims
+- [x] Implement Voyage HTTP client (`embed_voyage`) - 1024 dims
+- [x] Add provider selection logic (auto-detect with fallback)
+- [x] Implement `rag_index_chunks` command (embed + store)
+- [x] Implement `rag_search` command (embed query + KNN)
 
-### Phase 4: Indexing Pipeline
-- [ ] Implement `rag_index_chunks` command (embed + store)
+### Phase 4: Frontend Indexing Pipeline
 - [ ] Create frontend chunker (`src/lib/rag/chunker.ts`)
 - [ ] Create `.aiignore` parser (`src/lib/rag/aiignore.ts`)
 - [ ] Parse frontmatter for `ai: false`
 - [ ] Hook into doc save (auto-index)
 - [ ] Add "Re-index All" functionality
+- [ ] Wire up RAG tab buttons to Tauri commands
 
-### Phase 5: Search & AI Integration
-- [ ] Implement `rag_search` command (embed query + KNN)
-- [ ] Create search API in frontend (`src/lib/rag/search.ts`)
+### Phase 5: AI Chat Integration
+- [ ] Create search API in frontend (`src/lib/rag/index.ts`)
 - [ ] Integrate into AI chat (query before sending to Claude)
 - [ ] Add context to Claude prompt
 - [ ] Show collapsible "Sources" in AI responses
