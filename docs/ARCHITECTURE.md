@@ -408,15 +408,21 @@ if (registry.isOpen(oldPath)) {
 | Symptom | Likely Cause | Check |
 |---------|--------------|-------|
 | Cursor jumps while typing | TanStack Query refetching | Is file registered in OpenEditorRegistry? |
+| Content replaced after metadata change | Registry lastSavedContent not updated | Check registry.updateLastSaved() called after disk load |
 | External edits not showing | Event bus not connected | Check subscribeToEditorEvents call |
 | File move breaks editor | Path safety missing | Check domain operation notifies registry |
 | Infinite re-renders | Zustand dependency loop | Use `getState()` not hook in effects |
 | Stale list data | Cache not invalidated | Check watcher → QueryInvalidator flow |
+| Metadata save loses content | Domain op using stale body | Check updateDoc/updateTask reads body from disk |
 
 ### Important Implementation Notes
 
 1. **Editors write directly** to disk via `writeTextFile()`, NOT through FileTreeService
-2. **lastSavedContent** comparison prevents reacting to our own saves
+2. **lastSavedContent** must be updated:
+   - After loading content from disk in `useEditorSession`
+   - After domain operations (updateTask, updateDoc, updateMeeting) write to open files
 3. **getRegistry()** pattern avoids Zustand re-render loops in effects
-4. **400ms debounce** matches Obsidian's fast-save behavior
-5. **FileMovedBanner/FileDeletedBanner** handle edge cases gracefully
+4. **Save timing**: Content saves at 400ms, metadata saves at 600ms
+   - The 200ms gap ensures content saves complete before metadata reads disk
+5. **Domain operations** must read body from disk (not from passed object) to preserve current content
+6. **FileMovedBanner/FileDeletedBanner** handle edge cases gracefully
