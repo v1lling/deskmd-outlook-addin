@@ -220,9 +220,9 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 
 | File | Purpose |
 |------|---------|
-| `use-editor-session.ts` | Editor state with auto-save, external change detection |
+| `use-editor-session.ts` | Editor state with manual save (Cmd+S), external change detection |
 | `use-query-invalidator.ts` | Routes file watcher events to editors or TanStack Query |
-| `use-auto-save.ts` | Debounced auto-save with error-only status |
+| `use-window-close.ts` | Handles window close with unsaved changes protection |
 | `use-search-index.ts` | React hook for search index management |
 | `use-project-name.ts` | Project name lookup by ID |
 | `use-open-from-query.ts` | Handle `?open=id` URL params |
@@ -327,7 +327,10 @@ The app uses a dual-layer architecture for file access: one for **closed files**
 When file is OPEN in editor tab:
   → Editor owns state (useEditorSession hook)
   → File watcher routes changes to editor via EditorEventBus
-  → Auto-save with 400ms debounce (Obsidian-like)
+  → Manual save with Cmd+S (no auto-save)
+  → Metadata changes (status, priority, etc.) save immediately, passing body from editor
+  → Dirty indicator shown in tab until saved
+  → Unsaved changes prompt on tab close and app quit
   → Detects external changes via lastSavedContent comparison
 
 When file is CLOSED:
@@ -342,7 +345,7 @@ When file is CLOSED:
 |------|---------|
 | `src/stores/open-editor-registry.ts` | Zustand store tracking all open editor sessions by path |
 | `src/stores/editor-event-bus.ts` | Pub/sub for routing external changes to editors |
-| `src/hooks/use-editor-session.ts` | Hook for editor state with auto-save |
+| `src/hooks/use-editor-session.ts` | Hook for editor state with manual save (Cmd+S) |
 | `src/hooks/use-query-invalidator.ts` | Routes file watcher events to editors or TanStack |
 | `src/lib/desk/file-cache/` | Cached file tree for list views (LRU cache, 50MB limit) |
 | `src/lib/desk/watcher.ts` | Tauri file system watcher |
@@ -354,7 +357,8 @@ Editors (DocEditor, TaskEditor, MeetingEditor) use `useEditorSession()`:
 ```typescript
 const {
   content,           // Current editor content
-  setContent,        // Update content (triggers 400ms debounced save)
+  setContent,        // Update content (marks dirty, no auto-save)
+  getCurrentContent, // Get current content for metadata saves
   isDirty,           // Has unsaved changes
   saveStatus,        // "idle" | "saving" | "error"
   pathChanged,       // File was moved/renamed externally
@@ -362,15 +366,24 @@ const {
   fileDeleted,       // File was deleted externally
   acknowledgePathChange,  // Accept new path
   acknowledgeDeleted,     // Accept deletion
-  forceSave,         // Save immediately
+  save,              // Save to disk (called via Cmd+S)
 } = useEditorSession({
   type: "doc",       // "doc" | "task" | "meeting"
   entityId: docId,
   filePath: doc?.filePath,
-  initialContent: doc?.content ?? "",
+  initialContent: "",
   enabled: !!doc,
+  onSaveComplete,    // Callback after save (e.g., for RAG indexing)
 });
 ```
+
+**Save behavior:**
+- Content saves only on explicit Cmd+S (or clicking save button)
+- Metadata changes (status, priority, due date, title) save immediately
+- When saving metadata, pass `content: getCurrentContent()` to preserve unsaved body changes
+- Tab shows dirty indicator (dot) when there are unsaved changes
+- Closing dirty tab shows "Save/Don't Save/Cancel" dialog
+- Quitting app with dirty tabs shows confirmation dialog
 
 ### How External Changes Are Detected
 
@@ -407,22 +420,27 @@ if (registry.isOpen(oldPath)) {
 
 | Symptom | Likely Cause | Check |
 |---------|--------------|-------|
-| Cursor jumps while typing | TanStack Query refetching | Is file registered in OpenEditorRegistry? |
-| Content replaced after metadata change | Registry lastSavedContent not updated | Check registry.updateLastSaved() called after disk load |
+| Content lost after metadata change | Body not passed to mutation | Ensure `content: getCurrentContent()` passed to update mutation |
 | External edits not showing | Event bus not connected | Check subscribeToEditorEvents call |
 | File move breaks editor | Path safety missing | Check domain operation notifies registry |
 | Infinite re-renders | Zustand dependency loop | Use `getState()` not hook in effects |
 | Stale list data | Cache not invalidated | Check watcher → QueryInvalidator flow |
-| Metadata save loses content | Domain op using stale body | Check updateDoc/updateTask reads body from disk |
+| Dirty indicator not clearing | Save callback not updating state | Check save() clears isDirty |
+| Close dialog not showing | Tab not marked dirty | Check setTabDirty called when content changes |
 
 ### Important Implementation Notes
 
 1. **Editors write directly** to disk via `writeTextFile()`, NOT through FileTreeService
 2. **lastSavedContent** must be updated:
    - After loading content from disk in `useEditorSession`
-   - After domain operations (updateTask, updateDoc, updateMeeting) write to open files
+   - After explicit save via Cmd+S
 3. **getRegistry()** pattern avoids Zustand re-render loops in effects
-4. **Save timing**: Content saves at 400ms, metadata saves at 600ms
-   - The 200ms gap ensures content saves complete before metadata reads disk
-5. **Domain operations** must read body from disk (not from passed object) to preserve current content
-6. **FileMovedBanner/FileDeletedBanner** handle edge cases gracefully
+4. **Save behavior**:
+   - Content: Manual save via Cmd+S only
+   - Metadata: Saves immediately, passing `content: getCurrentContent()` to preserve editor state
+   - No auto-save, no debounce - simpler and more predictable
+5. **Dirty tab protection**:
+   - Tab bar checks `isDirty` before closing, shows SaveChangesDialog
+   - Window close intercepted by Rust, emits event to check for dirty tabs
+   - WindowCloseProvider in providers.tsx handles the confirmation dialog
+6. **FileMovedBanner/FileDeletedBanner** handle external file changes gracefully

@@ -76,10 +76,12 @@
 - Auto-refresh UI when files change externally
 - Works with external editors (Obsidian, VS Code, etc.)
 
-### Auto-Save
-- Obsidian-like silent persistence
-- Error-only status indicator
-- Debounced saves to prevent excessive writes
+### Manual Save
+- **Cmd+S** to save content (or click save button in header)
+- Metadata changes (status, priority, title, etc.) save immediately
+- Dirty indicator in tab when unsaved
+- Save/Don't Save/Cancel dialog on tab close
+- Confirmation dialog when quitting with unsaved changes
 
 ### Settings
 - Theme: Light/Dark/System
@@ -106,10 +108,11 @@
 - Configure AI provider in Settings
 
 ### Editor State Management
-- 400ms debounced auto-save (Obsidian-like fast saves)
+- Manual save with Cmd+S (no auto-save)
 - External change detection (works with Obsidian, VS Code editing)
 - Path change and deletion handling with user notifications
-- Cursor-stable editing (no jumps during external changes)
+- Unsaved changes protection on tab close and app quit
+- Immediate metadata saves preserve unsaved body content
 
 ### Email Integration
 - **Deep links**: External mail clients send emails via `desk://email?data=...`
