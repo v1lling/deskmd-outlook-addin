@@ -162,6 +162,15 @@
 - Minimal UI impact
 - Configure AI providers in Settings
 
+### Secure API Key Storage
+- **Current:** API keys stored unencrypted in localStorage (Anthropic, OpenAI, Voyage)
+- **Planned:** Use OS keychain for secure storage
+  - macOS: Keychain Access
+  - Windows: Windows Credential Store
+  - Linux: Secret Service API
+- Implement via `@tauri-apps/plugin-keyring` or similar
+- **Security Priority:** Prevents exposure if browser/localStorage compromised
+
 ### Mobile Companion
 - Read-only web view
 - Quick capture from phone
