@@ -23,7 +23,7 @@
 ### Projects
 - **Listed directly in sidebar** for current workspace (alphabetically sorted)
 - Scrollable list with max-height for workspaces with many projects
-- Tabbed detail page: Tasks (default), Overview, Docs, Meetings
+- Tabbed detail page: Overview, Tasks (default active), Docs, Meetings
 - Status badges (active/paused/completed/archived)
 - Task counts in sidebar and progress indicators
 - New Project button in projects section
@@ -84,9 +84,10 @@
 - Confirmation dialog when quitting with unsaved changes
 
 ### Settings
-- Theme: Light/Dark/System
-- Data folder path display and change
-- Reset to default path option
+- **General**: Theme (Light/Dark/System), sidebar, reset
+- **AI**: Provider (Claude Code CLI / Anthropic API), API key, usage stats
+- **Context**: Strategy selector (Smart Index / Embeddings / None), index status, RAG settings
+- **Data**: Data folder path, workspaces list
 
 ### Setup
 - First-run wizard
@@ -103,9 +104,17 @@
 ### AI Chat
 - Slide panel accessible from any view
 - **Providers**: Claude Code CLI or Anthropic API
-- **Doc context**: Attach docs from current scope for AI awareness
+- **Context retrieval**: Automatic via Smart Index or RAG (configurable in Settings > Context)
 - Conversation history per session
-- Configure AI provider in Settings
+- Collapsible "Sources" in AI responses
+- Configure AI provider in Settings > AI
+
+### AI Context Strategies
+- **Smart Index**: AI-summarized catalog of all files → AI selects relevant ones per query → full content passed
+- **Embeddings (RAG)**: Vector embeddings (Ollama/OpenAI/Voyage) → KNN similarity search → relevant chunks passed
+- **None**: No automatic context retrieval
+- Strategy selectable in Settings > Context
+- Both strategies support `.aiignore` exclusions and `ai: false` frontmatter
 
 ### Editor State Management
 - Manual save with Cmd+S (no auto-save)
@@ -149,18 +158,11 @@
 - `Esc` - Close modals/panels
 - Shortcut hints in UI tooltips
 
-### AI Context Integration
-- Any doc can be flagged as "AI context"
-- AI features read flagged docs when generating content
-- Per-project context selection
-- Export project context for AI tools
-- Global context docs for general info
-
 ### AI Assistance
-- Context-aware suggestions
-- Nice framework which hands over context to AI models
+- Context-aware suggestions (via Smart Index or RAG)
+- Extensible AI service with purpose-based API (chat, draft email, summarize, find tasks)
 - Minimal UI impact
-- Configure AI providers in Settings
+- Configure AI providers in Settings > AI
 
 ### Secure API Key Storage
 - **Current:** API keys stored unencrypted in localStorage (Anthropic, OpenAI, Voyage)

@@ -1,10 +1,23 @@
 # Task: RAG Integration and better AI Context Handling
 
 > Status: **Phase 5 Complete** - Core RAG integration working. Phase 6-7 pending (UI polish, extended file types).
+>
+> **Update**: Smart Index was added as an alternative context strategy (see GitHub issue #1). Users now choose between **Smart Index**, **Embeddings (RAG)**, or **None** in Settings > Context. RAG remains fully functional as the "Embeddings" option.
 
 ## Goal
 
 Introduce Retrieval-Augmented Generation (RAG) into Desk to enhance AI capabilities. Instead of manually attaching docs to chat, the AI automatically finds relevant context from your indexed documents.
+
+## Smart Index (Alternative Strategy)
+
+Smart Index was added as a lighter alternative to RAG. Instead of vector embeddings, it:
+1. Builds an AI-summarized catalog of all files (stored in `.desk/index/indexes.json`)
+2. When context is needed, AI selects relevant files from the catalog
+3. Full file content is read and passed to the AI
+
+**Key files**: `src/lib/context-index/`, `src/stores/context-index.ts`, `src/hooks/use-context-index-sync.ts`
+
+The unified hook `src/hooks/use-context-search.ts` branches on the selected strategy.
 
 ## Decisions Summary
 
@@ -70,7 +83,7 @@ Introduce Retrieval-Augmented Generation (RAG) into Desk to enhance AI capabilit
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  {dataPath}/.index/vectors.db (sqlite-vec)                      │
+│  {dataPath}/.desk/rag/vectors.db (sqlite-vec)                   │
 │  (dataPath from user settings, e.g. ~/Desk or ~/MyData)         │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -227,7 +240,7 @@ pub struct EmbeddingSettings {
 
 ```sql
 -- Created by rag_init_db
--- Database location: {dataPath}/.index/vectors.db
+-- Database location: {dataPath}/.desk/rag/vectors.db
 
 -- Index metadata (tracks provider, dimensions, etc.)
 CREATE TABLE IF NOT EXISTS index_meta (
@@ -349,7 +362,7 @@ pub async fn embed_voyage(
 ## Storage
 
 ```
-{dataPath}/.index/              # dataPath from user settings (e.g. ~/Desk, ~/MyData)
+{dataPath}/.desk/rag/              # dataPath from user settings (e.g. ~/Desk, ~/MyData)
 └── vectors.db                  # sqlite-vec database
     ├── index_meta              # provider, model, dimensions, version
     ├── chunks                  # doc_path, content, content_hash, workspace_id
@@ -437,24 +450,24 @@ Always include:
 
 ## Settings Page Restructure
 
-### New Tab Structure
+### Current Tab Structure
 
 ```
 ┌─────────────────────────────────────────────────┐
 │  Settings                                        │
-├────────┬────────┬────────┬──────────────────────┤
-│ General│   AI   │  RAG   │       Data           │
-└────────┴────────┴────────┴──────────────────────┘
+├────────┬────────┬──────────┬────────────────────┤
+│ General│   AI   │ Context  │       Data         │
+└────────┴────────┴──────────┴────────────────────┘
 ```
 
 | Tab | Contents |
 |-----|----------|
 | **General** | Theme, Sidebar, Reset |
 | **AI** | Provider (Claude Code/API), API key, Usage stats |
-| **RAG** | Embedding provider, Index status, Re-index button |
+| **Context** | Context strategy (Smart Index/Embeddings/None), embedding provider, index status |
 | **Data** | Data path, Workspaces list |
 
-### RAG Tab
+### Context Tab (RAG Settings Section)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -649,13 +662,13 @@ src/lib/rag/
 ├── aiignore.ts           # .aiignore file parsing
 └── types.ts              # TypeScript interfaces
 
-src/stores/rag.ts         # RAG settings Zustand store
+src/stores/context.ts     # Context strategy + RAG settings (Zustand, persisted)
+src/stores/context-index.ts  # Smart Index data store
 
 src/components/settings/
-├── settings-tabs.tsx     # Tab container
 ├── general-tab.tsx       # Theme, sidebar, reset
 ├── ai-tab.tsx            # Claude provider, API key, usage
-├── rag-tab.tsx           # Embedding provider, index status
+├── context-tab.tsx       # Context strategy, Smart Index + RAG settings
 └── data-tab.tsx          # Data path, workspaces
 ```
 

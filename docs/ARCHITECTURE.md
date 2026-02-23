@@ -27,7 +27,7 @@
                        │
                        ▼
             ┌─────────────────┐
-            │   ~/Desk/      │
+            │   ~/Desk/       │
             │  (Markdown FS)  │
             └─────────────────┘
 ```
@@ -66,7 +66,7 @@ Personal = workspace "_personal" (always first in list)
 
 ```
 ~/Desk/
-├── config.json                     # App settings (theme, current workspace)
+├── .desk/                          # App metadata (indexes, RAG database)
 ├── workspaces/
 │   ├── _personal/                  # Personal workspace (always first in list)
 │   │   ├── workspace.md            # Personal workspace metadata
@@ -168,8 +168,9 @@ Detection via `isTauri()` in `tauri-fs.ts`.
 | Type | Format | Location | Purpose |
 |------|--------|----------|---------|
 | Content data | Markdown + YAML frontmatter | `*.md` files | Tasks, docs, projects |
-| Global config | JSON | `~/Desk/config.json` | App settings |
+| App settings | localStorage | Browser/Tauri storage | Theme, current workspace, AI config |
 | View state | JSON | `.view.json` per folder | UI preferences (task order, expanded folders) |
+| App metadata | JSON/SQLite | `.desk/` subdirectory | Smart Index, RAG vectors |
 
 **Key principle:** Content data belongs in markdown (portable). UI preferences belong in `.view.json` (can be regenerated).
 
@@ -203,6 +204,21 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 | `watcher.ts` | File system watcher service (Tauri) |
 | `calculations.ts` | Business logic (task stats, grouping) |
 
+### AI Context Layer
+
+Two alternative strategies for retrieving relevant document context for AI features:
+
+| Directory/File | Purpose |
+|------|---------|
+| `src/lib/context-index/builder.ts` | Builds Smart Index with AI-generated summaries |
+| `src/lib/context-index/selector.ts` | AI-based file selection from Smart Index catalog |
+| `src/lib/context-index/types.ts` | IndexEntry, WorkspaceIndex types |
+| `src/lib/rag/chunker.ts` | Markdown-aware document chunking |
+| `src/lib/rag/aiignore.ts` | `.aiignore` file parsing |
+| `src/lib/rag/reindex.ts` | Full re-index functionality |
+| `src/stores/context.ts` | Context strategy settings (index/rag/none) |
+| `src/stores/context-index.ts` | Smart Index data store |
+
 ### Design System (`src/lib/`)
 
 | File | Purpose |
@@ -228,6 +244,12 @@ Uses **OverlayScrollbars** instead of native scrollbars for consistent styling a
 | `use-open-from-query.ts` | Handle `?open=id` URL params |
 | `use-grouped-items.ts` | Group items by a key function |
 | `use-editor-tab.ts` | Manage editor tab title/dirty state |
+| `use-context-search.ts` | Unified context search (branches on Smart Index / RAG / None) |
+| `use-context-index-sync.ts` | Keeps Smart Index in sync when files change |
+| `use-rag-indexer.ts` | Hooks into doc save for RAG auto-indexing |
+| `use-deep-link.ts` | Deep link (desk://) initialization for email integration |
+| `use-sidebar-resize.ts` | Draggable sidebar width |
+| `use-update-checker.ts` | Auto-updater check hook |
 
 ## File Format
 
@@ -281,12 +303,13 @@ interface Asset {
 | All Projects | `/docs` (All tab) | Aggregate view |
 | Project | `/projects/view?id=xxx` | `workspaces/{id}/projects/{id}/docs/` |
 
-### Future: AI Context
+### AI Context
 
-Docs can be flagged for AI context in the future. This is not yet implemented, but the plan is:
-- Any doc can be marked as "AI context"
-- AI features will read flagged docs when generating content
-- No separate "context" folder - just metadata on docs
+AI features use automatic context retrieval via two selectable strategies:
+- **Smart Index**: AI-summarized file catalog → AI selects relevant files → full content passed
+- **Embeddings (RAG)**: Vector embeddings → KNN similarity search → relevant chunks passed
+- Exclusions via `.aiignore` files (per-workspace) or `ai: false` in frontmatter
+- Configured in Settings > Context tab (`src/stores/context.ts`)
 
 ## File System Integration
 
