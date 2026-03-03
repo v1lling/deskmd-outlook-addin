@@ -6,7 +6,7 @@
 ┌─────────────────────────────────────────────────────────┐
 │                     ORBIT (Tauri)                        │
 ├─────────────────────────────────────────────────────────┤
-│  Next.js App Router                                      │
+│  Vite + React Router (SPA)                                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
 │  │ /        │  │  /docs   │  │/settings │              │
 │  │(dashboard)│  │  /tasks  │  │/personal │              │
@@ -301,7 +301,7 @@ interface Asset {
 | Personal | `/docs` (with Personal workspace selected) | `workspaces/_personal/docs/` |
 | Workspace | `/docs` (Workspace tab) | `workspaces/{id}/docs/` |
 | All Projects | `/docs` (All tab) | Aggregate view |
-| Project | `/projects/view?id=xxx` | `workspaces/{id}/projects/{id}/docs/` |
+| Project | `/projects/:id` | `workspaces/{id}/projects/{id}/docs/` |
 
 ### AI Context
 
